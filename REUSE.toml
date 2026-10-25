@@ -1,0 +1,41 @@
+version = 1
+
+# Original content by demiourgoi.
+[[annotations]]
+path = [
+    ".gitignore",
+    "README.md",
+    "DEVELOPER_GUIDE.md",
+    "licesing-skills.md",
+    "THIRD-PARTY-NOTICES.md",
+    "bin/agent-sop-to-skill.sh",
+    "skills/edenai-zed-config/SKILL.md",
+]
+SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"
+
+# Modified derivatives of strands-agents/agent-sop. Human-readable notices
+# live in LICENSE sidecars next to the skills; annotations keep the SKILL.md
+# files free of in-file headers.
+[[annotations]]
+path = [
+    "skills/pdd/SKILL.md",
+    "skills/pdd/LICENSE",
+    "skills/codebase-summary/SKILL.md",
+    "skills/codebase-summary/LICENSE",
+]
+SPDX-FileCopyrightText = [
+    "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
+    "Copyright (c) 2026 demiourgoi",
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+# Verbatim copies from strands-agents/agent-sop, kept unmodified.
+[[annotations]]
+path = [
+    ".agents/skills/agent-sop-author/SKILL.md",
+    ".agents/skills/agent-sop-author/validate-sop.sh",
+    ".agents/skills/agent-sop-author/LICENSE",
+]
+SPDX-FileCopyrightText = "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved."
+SPDX-License-Identifier = "Apache-2.0"
