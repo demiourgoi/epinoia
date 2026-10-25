@@ -1,15 +1,22 @@
 version = 1
 
+# NOTE: reuse detects any "Copyright" line in file content, and in-file
+# detection outranks these annotations. THIRD-PARTY-NOTICES.md quotes the
+# upstream NOTICE verbatim (Apache-2.0 §4(d)) and the
+# update-third-party-notices skill shows the same line in an example, so
+# `reuse spdx` lists the Amazon copyright for those two files. This file is
+# the authoritative record: both are original demiourgoi content under MIT.
+
 # Original content by demiourgoi.
 [[annotations]]
 path = [
     ".gitignore",
     "README.md",
     "DEVELOPER_GUIDE.md",
-    "licesing-skills.md",
     "THIRD-PARTY-NOTICES.md",
     "bin/agent-sop-to-skill.sh",
     "skills/edenai-zed-config/SKILL.md",
+    ".agents/skills/update-third-party-notices/SKILL.md",
 ]
 SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
 SPDX-License-Identifier = "MIT"

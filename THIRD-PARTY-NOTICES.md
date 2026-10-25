@@ -43,5 +43,6 @@ copyright and license notice; list the agent here when it is added.
 
 ## Adding third-party content
 
-See "How to add third-party content or code" in DEVELOPER_GUIDE.md for the
-checklist, and the entries above for examples.
+Use the `update-third-party-notices` skill
+(`.agents/skills/update-third-party-notices/SKILL.md`) for the full
+checklist; the entries above are examples of its output.
