@@ -18,7 +18,7 @@ so it travels with the skill when the directory is copied elsewhere
 | --- | --- | --- |
 | `skills/pdd/SKILL.md` | `agent-sops/pdd.sop.md` | modified derivative |
 | `skills/codebase-summary/SKILL.md` | `agent-sops/codebase-summary.sop.md` | modified derivative |
-| `.agents/skills/agent-sop-author/` | `skills/agent-sop-author/` | verbatim copy |
+| `.agents/skills/agent-sop-author/` | `skills/agent-sop-author/` | modified derivative (SKILL.md frontmatter only) |
 
 - `skills/pdd` and `skills/codebase-summary` were generated using
   `uvx strands-agents-sops skills` and then modified; their LICENSE sidecars
@@ -26,11 +26,33 @@ so it travels with the skill when the directory is copied elsewhere
   Apache-2.0 work remain under Apache-2.0 and are not covered by this
   repository's MIT license.
 - `.agents/skills/agent-sop-author` was downloaded directly from the
-  upstream repo and is unmodified; its licensing is recorded in REUSE.toml.
+  upstream repo and then modified: only the `SKILL.md` frontmatter changed,
+  to conform to the Agent Skills specification (`version`/`tags` moved under
+  `metadata` and a `license` field added). Its LICENSE sidecar states the
+  modification, as required by Apache-2.0 §4(b).
 
 ### Upstream NOTICE file (verbatim, per Apache-2.0 §4(d))
 
 > Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+## Agent Skills specification
+
+- Project: https://github.com/agentskills/agentskills
+- Upstream copyright: Copyright 2025 Anthropic, PBC
+- License: CC-BY-4.0 — full text in LICENSES/CC-BY-4.0.txt
+
+### Files in this repository
+
+| File | Upstream source | Status |
+| --- | --- | --- |
+| `.agents/skills/agent-sop-author/assets/agent-skills-specification.md` | `docs/specification.mdx`, published as https://agentskills.io/specification.md | verbatim copy of the published Markdown export |
+
+- The upstream repository licenses its code under Apache-2.0 but its
+  documentation under CC-BY-4.0 (see its README and `docs/LICENSE`). The
+  specification is documentation, so this copy is attributed under
+  CC-BY-4.0 rather than Apache-2.0.
+- No upstream NOTICE file exists; attribution is provided by the
+  `assets/LICENSE` sidecar and this section, as required by CC-BY-4.0 §3(a).
 
 ## ponytail
 

@@ -1,0 +1,19 @@
+Copyright 2025 Anthropic, PBC
+Copyright (c) 2026 demiourgoi (sidecar notice)
+
+This file is a verbatim copy of the published Markdown export of the Agent
+Skills specification at https://agentskills.io/specification.md. Its
+canonical source is `docs/specification.mdx` in
+https://github.com/agentskills/agentskills/.
+
+The upstream repository licenses its code under Apache-2.0, but its
+documentation under the Creative Commons Attribution 4.0 International
+License (CC-BY-4.0), as stated in its README and `docs/LICENSE`. This
+specification document is documentation, so it is redistributed here under
+CC-BY-4.0, not Apache-2.0. Full license text:
+https://creativecommons.org/licenses/by/4.0/ and LICENSES/CC-BY-4.0.txt in
+this repository.
+
+Modifications: none to the document text. The published Markdown export was
+copied as-is; the upstream source is MDX and the documentation build renders
+it to Markdown.

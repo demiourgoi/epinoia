@@ -30,6 +30,8 @@ path = [
     "skills/pdd/LICENSE",
     "skills/codebase-summary/SKILL.md",
     "skills/codebase-summary/LICENSE",
+    ".agents/skills/agent-sop-author/SKILL.md",
+    ".agents/skills/agent-sop-author/LICENSE",
 ]
 SPDX-FileCopyrightText = [
     "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
@@ -37,12 +39,23 @@ SPDX-FileCopyrightText = [
 ]
 SPDX-License-Identifier = "Apache-2.0"
 
-# Verbatim copies from strands-agents/agent-sop, kept unmodified.
+# Verbatim copy from strands-agents/agent-sop, kept unmodified.
 [[annotations]]
 path = [
-    ".agents/skills/agent-sop-author/SKILL.md",
     ".agents/skills/agent-sop-author/validate-sop.sh",
-    ".agents/skills/agent-sop-author/LICENSE",
 ]
 SPDX-FileCopyrightText = "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved."
 SPDX-License-Identifier = "Apache-2.0"
+
+# Documentation from agentskills/agentskills. The upstream repository licenses
+# its code under Apache-2.0 but its documentation under CC-BY-4.0.
+[[annotations]]
+path = [
+    ".agents/skills/agent-sop-author/assets/agent-skills-specification.md",
+    ".agents/skills/agent-sop-author/assets/LICENSE",
+]
+SPDX-FileCopyrightText = [
+    "Copyright 2025 Anthropic, PBC",
+    "Copyright (c) 2026 demiourgoi",
+]
+SPDX-License-Identifier = "CC-BY-4.0"
