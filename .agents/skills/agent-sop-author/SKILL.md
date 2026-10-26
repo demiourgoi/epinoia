@@ -1,8 +1,10 @@
 ---
 name: agent-sop-author
 description: Create (or update) and validate Agent SOPs (Standard Operating Procedures) - markdown-based workflows that guide AI agents through complex, multi-step tasks with RFC 2119 constraints.
-version: 1.0.0
-tags: [skill, agent-sop, workflow, automation, sop, rfc2119]
+license: Apache-2.0
+metadata:
+  version: "1.0.0"
+  tags: "skill, agent-sop, workflow, automation, sop, rfc2119"
 ---
 
 # Agent SOP Author
