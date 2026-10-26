@@ -179,6 +179,15 @@ Create a structured implementation plan with a series of steps for implementing 
 **Constraints:**
 - You MUST create an implementation plan at {project_dir}/implementation/plan.md
 - You MUST include a checklist at the beginning of the plan.md file to track implementation progress
+- You MUST include a "## Working agreements" section in the plan, placed after the checklist and before the section for the first step of the plan, because it establishes how execution will proceed before any step is attempted
+- The "## Working agreements" section MUST begin with the following text verbatim:
+  ```
+  Proceed step by step:
+
+  - After each step, ask me for confirmation before completing it
+  - When completing a step, add an "Implementation notes" subsection to its section in the plan, summarizing what we did, focusing on deviations from the plan, why we made them, and implications for subsequent steps
+  ```
+- You MAY add other general implementation instructions (e.g., build commands, testing practices) to the "## Working agreements" section, provided they do not contradict the required text above
 - You MUST use the following specific instructions when creating the implementation plan:
   ```
   Convert the design into a series of implementation steps that will build each component in a test-driven manner following agile best practices. Each step must result in a working, demoable increment of functionality. Prioritize best practices, incremental progress, and early testing, ensuring no big jumps in complexity at any stage. Make sure that each step builds on the previous steps, and ends with wiring things together. There should be no hanging or orphaned code that isn't integrated into a previous step.
