@@ -1,6 +1,6 @@
 ---
 name: update-third-party-notices
-description: This SOP guides the process of recording third-party content or code — agent skills, scripts, documents, or configurations — reused in this repository, either verbatim or modified, so that the repository stays compliant with all upstream licenses and with the REUSE Specification. It updates every compliance artifact: the license text under `LICENSES/`, a `LICENSE` sidecar next to the reused content, the `license` frontmatter field for skills, the entries in `THIRD-PARTY-NOTICES.md`, and the annotations in `REUSE.toml`, and finishes with a `uvx reuse lint` validation. Use it whenever third-party content is added, for example the planned custom opencode agent based on a modified ponytail agent skill.
+description: "This SOP guides the process of recording third-party content or code — agent skills, scripts, documents, or configurations — reused in this repository, either verbatim or modified, so that the repository stays compliant with all upstream licenses and with the REUSE Specification. It updates every compliance artifact: the license text under `LICENSES/`, a `LICENSE` sidecar next to the reused content, the `license` frontmatter field for skills, the entries in `THIRD-PARTY-NOTICES.md`, and the annotations in `REUSE.toml`, and finishes with a `uvx reuse lint` validation. Use it whenever third-party content is added, for example the planned custom opencode agent based on a modified ponytail agent skill."
 ---
 
 # Update Third-Party Notices
