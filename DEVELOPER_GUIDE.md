@@ -14,10 +14,15 @@ see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ### Skills based on [ponytail](https://github.com/dietrichgebert/ponytail)
 
-None yet. Planned: a custom opencode agent based on a modification of an
-agent skill from the ponytail repo (MIT-licensed). Follow the
-[third-party checklist](#how-to-add-third-party-content-or-code-verbatim-or-modified)
-when adding it.
+`.opencode/agents/ponytail-review-readonly.md` is a custom opencode agent
+derived from a modification of the `ponytail-review` agent skill of the
+ponytail repo (MIT-licensed): the skill body became the agent's system
+prompt with a hard read-only restriction, and section 3 ("Check before you
+report") was kept verbatim. Its read-only permissions live in `opencode.json`
+(`agents.ponytail-review-readonly.permissions`), which also ships the agent.
+`skills/ponytail-review-pdd` is the skill that launches the agent to review
+PDD artifacts; its tests live in `tests/skills/ponytail-review-pdd`. See
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution.
 
 ## How To
 
@@ -29,6 +34,15 @@ when adding it.
 2. Validate with `.agents/skills/agent-sop-author/validate-skill.sh <skill-dir>` (e.g. `skills/my-skill`).
 
 Remember to favor deterministic scripts in `scripts/` over prose instructions in the SKILL.md, when possible.
+
+### How to run the tests
+
+`make test` (or `tests/run.sh`) runs every hermetic test suite in `tests/`;
+suites are any `test-*.sh` files and new ones are picked up automatically.
+`make test-e2e` additionally runs the live opencode smoke tests, which need
+opencode authentication and spend a few cents of tokens; full LLM reviews are
+deliberately not automated because they cost real reasoning money. See
+[tests/README.md](tests/README.md) for details.
 
 ### How to setup Zed for an EdenAI model
 

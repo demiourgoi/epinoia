@@ -11,14 +11,40 @@ version = 1
 [[annotations]]
 path = [
     ".gitignore",
+    "Makefile",
     "README.md",
     "DEVELOPER_GUIDE.md",
     "THIRD-PARTY-NOTICES.md",
     "bin/agent-sop-to-skill.sh",
+    "opencode.json",
     "skills/edenai-zed-config/SKILL.md",
+    "skills/ponytail-review-pdd/SKILL.md",
+    "skills/ponytail-review-pdd/scripts/compute-diff.sh",
+    "skills/ponytail-review-pdd/scripts/run-review.sh",
+    "tests/README.md",
+    "tests/run.sh",
+    "tests/lib.sh",
+    "tests/skills/ponytail-review-pdd/lib.sh",
+    "tests/skills/ponytail-review-pdd/test-run-review.sh",
+    "tests/skills/ponytail-review-pdd/test-compute-diff.sh",
+    "tests/skills/ponytail-review-pdd/test-e2e.sh",
     ".agents/skills/update-third-party-notices/SKILL.md",
 ]
 SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"
+
+# Modified derivative of DietrichGebert/ponytail. The human-readable
+# notice lives in the LICENSE sidecar next to the agent; the annotation
+# keeps the agent file free of in-file headers.
+[[annotations]]
+path = [
+    ".opencode/agents/ponytail-review-readonly.md",
+    ".opencode/agents/LICENSE",
+]
+SPDX-FileCopyrightText = [
+    "Copyright (c) 2026 DietrichGebert",
+    "Copyright (c) 2026 demiourgoi",
+]
 SPDX-License-Identifier = "MIT"
 
 # Modified derivatives of strands-agents/agent-sop. Human-readable notices

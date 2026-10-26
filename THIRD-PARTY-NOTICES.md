@@ -59,12 +59,26 @@ so it travels with the skill when the directory is copied elsewhere
 
 ## ponytail
 
-Project: https://github.com/dietrichgebert/ponytail (MIT)
+- Project: https://github.com/dietrichgebert/ponytail
+- Upstream copyright: Copyright (c) 2026 DietrichGebert
+- License: MIT — full text in LICENSES/MIT.txt
 
-No ponytail-derived content is included yet. Planned: a custom opencode
-agent based on a modification of an agent skill from the ponytail repo.
-Ponytail is MIT-licensed, so derivatives only need to retain the upstream
-copyright and license notice; list the agent here when it is added.
+### Files in this repository
+
+| File | Upstream source | Status |
+| --- | --- | --- |
+| `.opencode/agents/ponytail-review-readonly.md` | `skills/ponytail-review/SKILL.md` | modified derivative |
+
+- The custom opencode agent was derived from the upstream `ponytail-review`
+  agent skill: the skill frontmatter was dropped, the body became the agent's
+  system prompt, a hard read-only restriction (with the review file as the
+  single exception) was added, guidance for the three review subjects of
+  `skills/ponytail-review-pdd` was added, and section 3 ("Check before you
+  report") was kept verbatim. The LICENSE sidecar next to the agent states
+  the modifications. MIT derivatives keep the upstream copyright and this
+  notice; see `.opencode/agents/LICENSE`.
+- The `skills/ponytail-review-pdd` skill that launches this agent is original
+  demiourgoi content under this repository's MIT license.
 
 ## Adding third-party content
 
