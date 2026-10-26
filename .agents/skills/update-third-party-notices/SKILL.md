@@ -124,7 +124,7 @@ The agent verifies the ponytail license (MIT) and its copyright line, confirms `
 - notice_text: Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 **Expected Behavior:**
-The agent changes none of the copied files, creates only the `LICENSE` sidecar describing the verbatim copy, records the entry and the NOTICE quote in `THIRD-PARTY-NOTICES.md`, annotates the upstream files in `REUSE.toml` as Apache-2.0, and finishes with a passing `uvx reuse lint`. This is exactly how `.agents/skills/agent-sop-author` was recorded.
+The agent changes none of the copied files, creates only the `LICENSE` sidecar describing the verbatim copy, records the entry and the NOTICE quote in `THIRD-PARTY-NOTICES.md`, annotates the upstream files in `REUSE.toml` as Apache-2.0, and finishes with a passing `uvx reuse lint`. This is how `.agents/skills/agent-sop-author` was originally recorded; it was later modified in place (frontmatter conformance, then the rework to generate agent skills), so it now follows the modified-derivative treatment shown in `THIRD-PARTY-NOTICES.md`.
 
 ### Example 3: GPL-licensed snippet (stop)
 
@@ -155,4 +155,4 @@ Add the file to the matching annotation group in `REUSE.toml` — `.gitignore` n
 Redirect uv's writable directories to `/tmp`, for example `UV_CACHE_DIR=/tmp/uv-cache UV_TOOL_DIR=/tmp/uv-tools UV_PYTHON_INSTALL_DIR=/tmp/uv-python uvx reuse lint`, because sandboxed terminals cannot write to the home directory.
 
 ### Cannot decide between verbatim and modified
-If a single byte changed — even just added frontmatter — the content is modified and needs the modified-derivative treatment. The `license` frontmatter was deliberately not added to `.agents/skills/agent-sop-author/SKILL.md` for this exact reason.
+If a single byte changed — even just added frontmatter — the content is modified and needs the modified-derivative treatment. This is exactly what happened to `.agents/skills/agent-sop-author`: it started as a verbatim copy, and adding the Agent Skills frontmatter (including the `license` field) turned it into a modified derivative.
