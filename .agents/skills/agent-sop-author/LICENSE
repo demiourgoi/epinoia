@@ -22,11 +22,15 @@ https://github.com/strands-agents/agent-sop/tree/main/skills/agent-sop-author
 from the Apache-2.0 licensed project Strands Agents Agent SOP. It was
 downloaded verbatim and then modified by demiourgoi: the `SKILL.md`
 frontmatter was changed to conform to the Agent Skills specification,
-replacing the non-standard `version` and `tags` fields with a `metadata`
-mapping and adding a `license` field. All other upstream content is
-unchanged. As a derivative of an Apache-2.0 work it remains licensed under
-Apache-2.0. Full license text: https://www.apache.org/licenses/LICENSE-2.0
-and LICENSES/Apache-2.0.txt in this repository.
+and the skill was reworked so it now generates agent skills (a skill
+directory with a `SKILL.md` in the Agent Skills format, with
+deterministic logic in `scripts/`) instead of `.sop.md` SOP files;
+`validate-sop.sh` was renamed to `validate-skill.sh` and extended with
+the authoritative `uvx --from skills-ref agentskills validate`
+specification check. As a derivative of an Apache-2.0 work it remains
+licensed under Apache-2.0. Full license text:
+https://www.apache.org/licenses/LICENSE-2.0 and LICENSES/Apache-2.0.txt
+in this repository.
 
 The bundled asset `assets/agent-skills-specification.md` is third-party
 documentation licensed under CC-BY-4.0; see `assets/LICENSE` for its

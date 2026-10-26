@@ -18,7 +18,7 @@ so it travels with the skill when the directory is copied elsewhere
 | --- | --- | --- |
 | `skills/pdd/SKILL.md` | `agent-sops/pdd.sop.md` | modified derivative |
 | `skills/codebase-summary/SKILL.md` | `agent-sops/codebase-summary.sop.md` | modified derivative |
-| `.agents/skills/agent-sop-author/` | `skills/agent-sop-author/` | modified derivative (SKILL.md frontmatter only) |
+| `.agents/skills/agent-sop-author/` | `skills/agent-sop-author/` | modified derivative |
 
 - `skills/pdd` and `skills/codebase-summary` were generated using
   `uvx strands-agents-sops skills` and then modified; their LICENSE sidecars
@@ -26,10 +26,13 @@ so it travels with the skill when the directory is copied elsewhere
   Apache-2.0 work remain under Apache-2.0 and are not covered by this
   repository's MIT license.
 - `.agents/skills/agent-sop-author` was downloaded directly from the
-  upstream repo and then modified: only the `SKILL.md` frontmatter changed,
-  to conform to the Agent Skills specification (`version`/`tags` moved under
-  `metadata` and a `license` field added). Its LICENSE sidecar states the
-  modification, as required by Apache-2.0 §4(b).
+  upstream repo and then modified: the `SKILL.md` frontmatter was
+  conformed to the Agent Skills specification, the body was reworked so
+  the skill generates agent skills (`SKILL.md` plus deterministic logic
+  in `scripts/`) instead of `.sop.md` SOP files, and `validate-sop.sh`
+  was renamed to `validate-skill.sh` and extended with the skills-ref
+  `agentskills validate` specification check. Its LICENSE sidecar
+  states the modifications, as required by Apache-2.0 §4(b).
 
 ### Upstream NOTICE file (verbatim, per Apache-2.0 §4(d))
 

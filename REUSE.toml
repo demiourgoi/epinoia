@@ -32,19 +32,12 @@ path = [
     "skills/codebase-summary/LICENSE",
     ".agents/skills/agent-sop-author/SKILL.md",
     ".agents/skills/agent-sop-author/LICENSE",
+    ".agents/skills/agent-sop-author/validate-skill.sh",
 ]
 SPDX-FileCopyrightText = [
     "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
     "Copyright (c) 2026 demiourgoi",
 ]
-SPDX-License-Identifier = "Apache-2.0"
-
-# Verbatim copy from strands-agents/agent-sop, kept unmodified.
-[[annotations]]
-path = [
-    ".agents/skills/agent-sop-author/validate-sop.sh",
-]
-SPDX-FileCopyrightText = "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved."
 SPDX-License-Identifier = "Apache-2.0"
 
 # Documentation from agentskills/agentskills. The upstream repository licenses

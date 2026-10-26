@@ -6,9 +6,10 @@ The skills in `.agents/skills` are for developing in this repo. The skills in `s
 
 ### Skills based on [Strands agents SOPs](https://github.com/strands-agents/agent-sop)
 
-`skills/pdd` and `skills/codebase-summary` are modified derivatives;
-`.agents/skills/agent-sop-author` is a verbatim copy. All remain licensed
-under Apache-2.0 — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+`skills/pdd` and `skills/codebase-summary` are modified derivatives, and
+so is `.agents/skills/agent-sop-author` (it now generates agent skills
+instead of `.sop.md` SOP files). All remain licensed under Apache-2.0 —
+see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 
 ### Skills based on [ponytail](https://github.com/dietrichgebert/ponytail)
@@ -20,14 +21,14 @@ when adding it.
 
 ## How To
 
-### How to create a skill using agent SOPs
+### How to create a skill
 
-1. Create an agent SOP using `/agent-sop-author` providing a list of parameters, a list of steps, and some positive and negative examples. 
-    - Ask `/agent-sop-author` to create the SOP on a directory `skill/my-skill` 
-    - It is a also useful to consolidate an existing agent thread into an SOP.
-2. [Convert the agent SOP into a skill](https://github.com/strands-agents/agent-sop#converting-sops-to-skills): `./bin/agent-sop-to-skill.sh my-skill`
+1. Ask `/agent-sop-author` to create the skill, providing a list of parameters, a list of steps, and some positive and negative examples.
+    - The skill is generated directly in the Agent Skills format: a `skill-name/` directory with a `SKILL.md` (frontmatter plus SOP prompt body) and deterministic logic in `scripts/`.
+    - It is also useful to consolidate an existing agent thread into a skill.
+2. Validate with `.agents/skills/agent-sop-author/validate-skill.sh <skill-dir>` (e.g. `skills/my-skill`).
 
-Remember to favor generating deterministic scripts over skills or agent SOPs, when possible.
+Remember to favor deterministic scripts in `scripts/` over prose instructions in the SKILL.md, when possible.
 
 ### How to setup Zed for an EdenAI model
 
