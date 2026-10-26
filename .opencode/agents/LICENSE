@@ -43,4 +43,4 @@ As a derivative of an MIT-licensed work it remains licensed under MIT. Full
 license text: https://opensource.org/licenses/MIT and LICENSES/MIT.txt in the
 source repository. The "ponytail-review-pdd" skill in this repository launches
 this agent. Read-only enforcement is reinforced by the agent's permission
-rules in opencode.json.
+rules in .opencode/opencode.json.

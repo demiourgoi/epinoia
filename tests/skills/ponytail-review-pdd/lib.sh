@@ -25,7 +25,7 @@ P="$TEST_REPO/.agents/planning/2026-10-26-demo"
 #   - two commits (base.txt = "hello v2" at HEAD, "hello v1" at HEAD~1)
 #   - uncommitted work: base.txt modified, stagedfile.txt staged (new),
 #     newfile.txt untracked, and the untracked opencode agent installation
-#     files (.opencode/agents/*, opencode.json)
+#     files (.opencode/agents/*, .opencode/opencode.json)
 setup_repo() {
     rm -rf "$TEST_REPO"
     mkdir -p "$P/research" "$P/design" "$P/implementation" \
@@ -58,7 +58,7 @@ setup_repo() {
 
     cp "$REPO_ROOT/.opencode/agents/ponytail-review-readonly.md" \
        "$TEST_REPO/.opencode/agents/ponytail-review-readonly.md"
-    cp "$REPO_ROOT/opencode.json" "$TEST_REPO/opencode.json"
+    cp "$REPO_ROOT/.opencode/opencode.json" "$TEST_REPO/.opencode/opencode.json"
 
     cd "$TEST_REPO"
 }

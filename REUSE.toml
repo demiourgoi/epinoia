@@ -16,7 +16,7 @@ path = [
     "DEVELOPER_GUIDE.md",
     "THIRD-PARTY-NOTICES.md",
     "bin/agent-sop-to-skill.sh",
-    "opencode.json",
+    ".opencode/opencode.json",
     "skills/edenai-zed-config/SKILL.md",
     "skills/ponytail-review-pdd/SKILL.md",
     "skills/ponytail-review-pdd/scripts/compute-diff.sh",

@@ -18,10 +18,11 @@ see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 derived from a modification of the `ponytail-review` agent skill of the
 ponytail repo (MIT-licensed): the skill body became the agent's system
 prompt with a hard read-only restriction, and section 3 ("Check before you
-report") was kept verbatim. Its read-only permissions live in `opencode.json`
-(`agents.ponytail-review-readonly.permissions`), which also ships the agent.
-`skills/ponytail-review-pdd` is the skill that launches the agent to review
-PDD artifacts; its tests live in `tests/skills/ponytail-review-pdd`. See
+report") was kept verbatim. Its read-only permissions live in
+`.opencode/opencode.json` (`agents.ponytail-review-readonly.permissions`),
+which also ships the agent. `skills/ponytail-review-pdd` is the skill that
+launches the agent to review PDD artifacts; its tests live in
+`tests/skills/ponytail-review-pdd`. See
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution.
 
 ## How To

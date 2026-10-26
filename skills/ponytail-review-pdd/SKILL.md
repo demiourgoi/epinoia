@@ -36,8 +36,8 @@ Prerequisites (the scripts check them and report how to fix them):
   model's provider.
 - The opencode agent is installed in the repository being reviewed as
   `.opencode/agents/ponytail-review-readonly.md`, together with the
-  `opencode.json` that defines its read-only permissions (both files live in
-  the epinoia repository).
+  `.opencode/opencode.json` that defines its read-only permissions (all of it
+  lives in the epinoia repository's `.opencode/` directory).
 
 ## Parameters
 
@@ -186,9 +186,9 @@ Same as Example 2, but the reviewer runs with
 
 ### The script reports the opencode agent is not installed
 The repository being reviewed must contain
-`.opencode/agents/ponytail-review-readonly.md` and the `opencode.json` with
-its read-only permissions. Copy both files from the epinoia repository into
-the repository being reviewed and retry.
+`.opencode/agents/ponytail-review-readonly.md` and `.opencode/opencode.json`
+with its read-only permissions. Copy the epinoia repository's `.opencode/`
+directory into the repository being reviewed and retry.
 
 ### opencode fails with a model or auth error
 Check the model id with `opencode models` and authenticate the provider with

@@ -169,17 +169,17 @@ elif [[ -f "$GLOBAL_AGENT_FILE" ]]; then
 else
     cat >&2 <<EOF
 Error: the opencode agent '$AGENT_ID' is not installed in this project.
-Install it by copying from the epinoia repository:
-  .opencode/agents/${AGENT_ID}.md   -> $PROJECT_AGENT_FILE
-  opencode.json                     -> $GIT_ROOT/opencode.json
-(opencode.json carries the agent's read-only permissions; both files are needed.)
+Install it by copying the epinoia repository's .opencode/ directory into $GIT_ROOT:
+  .opencode/agents/${AGENT_ID}.md   (the agent)
+  .opencode/opencode.json            (its read-only permissions)
 EOF
     exit 1
 fi
 
 if [[ "$AGENT_SOURCE" == "project" ]]; then
     CONFIG_HAS_AGENT="false"
-    for cfg in "$GIT_ROOT/opencode.json" "$GIT_ROOT/opencode.jsonc"; do
+    for cfg in "$GIT_ROOT/.opencode/opencode.json" "$GIT_ROOT/.opencode/opencode.jsonc" \
+               "$GIT_ROOT/opencode.json" "$GIT_ROOT/opencode.jsonc"; do
         if [[ -f "$cfg" ]] && grep -q '"ponytail-review-readonly"' "$cfg"; then
             CONFIG_HAS_AGENT="true"
             break
@@ -188,7 +188,7 @@ if [[ "$AGENT_SOURCE" == "project" ]]; then
     if [[ "$CONFIG_HAS_AGENT" != "true" ]] && ! grep -q '^permissions:' "$PROJECT_AGENT_FILE"; then
         cat >&2 <<EOF
 Error: the agent '$AGENT_ID' has no read-only permissions configured.
-Copy the opencode.json file from the epinoia repository to $GIT_ROOT/opencode.json
+Copy the epinoia repository's .opencode/opencode.json to $GIT_ROOT/.opencode/opencode.json
 (it defines agents."$AGENT_ID".permissions), or add a permissions block to the
 agent's Markdown frontmatter yourself.
 EOF

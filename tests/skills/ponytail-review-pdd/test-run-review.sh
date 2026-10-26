@@ -119,11 +119,11 @@ assert_rc 1 "missing agent file exits 1"
 assert_grep "ponytail-review-readonly' is not installed in this project" "missing agent file error message"
 mv "$WORK_DIR/agent.md.bak" "$TEST_REPO/.opencode/agents/ponytail-review-readonly.md"
 
-mv "$TEST_REPO/opencode.json" "$WORK_DIR/opencode.json.bak"
+mv "$TEST_REPO/.opencode/opencode.json" "$WORK_DIR/opencode.json.bak"
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
 assert_rc 1 "agent without permissions config exits 1"
 assert_grep "no read-only permissions configured" "agent without permissions error message"
-mv "$WORK_DIR/opencode.json.bak" "$TEST_REPO/opencode.json"
+mv "$WORK_DIR/opencode.json.bak" "$TEST_REPO/.opencode/opencode.json"
 
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
 assert_rc 0 "restored setup works again"
