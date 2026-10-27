@@ -188,7 +188,9 @@ Same as Example 2, but the reviewer runs with
 The repository being reviewed must contain
 `.opencode/agents/ponytail-review-readonly.md` and `.opencode/opencode.json`
 with its read-only permissions. Copy the epinoia repository's `.opencode/`
-directory into the repository being reviewed and retry.
+directory into the repository being reviewed, or run
+`make -C /path/to/epinoia install` from the repository to install into it
+(which also installs the skills), and retry.
 
 ### opencode fails with a model or auth error
 Check the model id with `opencode models` and authenticate the provider with

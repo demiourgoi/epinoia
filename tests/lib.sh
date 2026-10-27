@@ -5,6 +5,12 @@
 # A suite runs any number of checks with the assert_* helpers and ends with
 # finish, which prints a summary and returns non-zero when anything failed.
 
+TESTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$TESTS_ROOT/.." && pwd)"
+# Shared workspace inside the repository's gitignored .local/; suites may
+# override it with their own subdirectory.
+WORK_DIR="$REPO_ROOT/.local/tests"
+
 TESTS_RUN=0
 TESTS_FAILED=0
 OUT_FILE="$(mktemp)"

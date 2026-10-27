@@ -24,6 +24,7 @@ path = [
     "tests/README.md",
     "tests/run.sh",
     "tests/lib.sh",
+    "tests/test-install.sh",
     "tests/skills/ponytail-review-pdd/lib.sh",
     "tests/skills/ponytail-review-pdd/test-run-review.sh",
     "tests/skills/ponytail-review-pdd/test-compute-diff.sh",

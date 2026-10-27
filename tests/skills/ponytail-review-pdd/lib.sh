@@ -2,12 +2,9 @@
 # Fixture and helpers for the ponytail-review-pdd test suites. Sources the
 # shared assertion helpers from ../../lib.sh and provides setup_repo.
 
-_TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TESTS_ROOT="$(cd "$_TEST_DIR/../.." && pwd)"
-REPO_ROOT="$(cd "$TESTS_ROOT/.." && pwd)"
-SKILL_DIR="$REPO_ROOT/skills/ponytail-review-pdd"
+. "$(dirname "${BASH_SOURCE[0]}")/../../lib.sh"
 
-. "$TESTS_ROOT/lib.sh"
+SKILL_DIR="$REPO_ROOT/skills/ponytail-review-pdd"
 
 # Every suite rebuilds the same workspace, which is kept afterwards so
 # failures can be inspected. The workspace lives inside the repository's

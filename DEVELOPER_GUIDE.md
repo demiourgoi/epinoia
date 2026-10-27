@@ -45,6 +45,24 @@ opencode authentication and spend a few cents of tokens; full LLM reviews are
 deliberately not automated because they cost real reasoning money. See
 [tests/README.md](tests/README.md) for details.
 
+### How to install the skills and opencode agent into a project
+
+From the project to install into, run:
+
+    make -C /path/to/epinoia install
+
+`TARGET_DIR` defaults to the caller's `$PWD`, so this installs into the
+current project. You can also name the target explicitly:
+
+    make -C /path/to/epinoia install TARGET_DIR=/path/to/project
+
+This copies every skill from `skills/` into `TARGET_DIR/.agents/skills/`
+(where Zed discovers project skills) and the opencode agent with its config
+from `.opencode/` into `TARGET_DIR/.opencode/` (where opencode discovers it
+from the project root). Existing files are overwritten; other files in the
+target are left untouched. The agent's `LICENSE` sidecar travels with it, so
+attribution stays in place.
+
 ### How to setup Zed for an EdenAI model
 
 On `~/.config/zed/settings.json` add an entry 
