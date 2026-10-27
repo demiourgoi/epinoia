@@ -21,7 +21,7 @@ assert_grep "requirements refined in $SUBJ/idea-honing\.md" "tech-design prompt 
 assert_grep "Research notes are under $SUBJ/research\." "tech-design prompt stresses the research"
 assert_grep "first read \.agents/summary/index\.md" "tech-design prompt points at the codebase summary index"
 assert_grep "Model selector: edenai/zai/glm-5\.3#max$" "default model selector is edenai/zai/glm-5.3#max"
-assert_grep "Agent: *ponytail-review-readonly \(project\)$" "agent found in the project"
+assert_grep "Agent: *ponytail-review-readonly \(project: $TEST_REPO/\.opencode/agents/ponytail-review-readonly\.md\)$" "agent found in the project"
 assert_missing "$P/design/detailed-design-review-rev1.md" "dry-run writes no review file"
 assert_glob_empty "$P"/changes-*.diff "dry-run computes no diff"
 
@@ -113,11 +113,19 @@ assert_grep "project directory not found" "missing project dir error message"
 
 group "opencode setup guards"
 
-mv "$TEST_REPO/.opencode/agents/ponytail-review-readonly.md" "$WORK_DIR/agent.md.bak"
-run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
+# A repository without any agent must fail. Use a /tmp fixture so the
+# ancestor walk cannot find an agent installed above the test workspace, and
+# point XDG_CONFIG_HOME at an empty directory so a globally installed agent
+# cannot interfere either.
+MISSING=/tmp/ponytail-review-pdd-missing-agent
+rm -rf "$MISSING"
+mkdir -p "$MISSING/proj/design"
+printf '# Design\nNo agent here\n' > "$MISSING/proj/design/detailed-design.md"
+git -C "$MISSING" init -q
+run_in "$MISSING" env XDG_CONFIG_HOME="$MISSING/xdg" "$SKILL_DIR/scripts/run-review.sh" \
+    --dry-run --project-dir "$MISSING/proj" --subject tech-design
 assert_rc 1 "missing agent file exits 1"
-assert_grep "ponytail-review-readonly' is not installed in this project" "missing agent file error message"
-mv "$WORK_DIR/agent.md.bak" "$TEST_REPO/.opencode/agents/ponytail-review-readonly.md"
+assert_grep "is not installed for this repository" "missing agent file error message"
 
 mv "$TEST_REPO/.opencode/opencode.json" "$WORK_DIR/opencode.json.bak"
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
@@ -127,6 +135,41 @@ mv "$WORK_DIR/opencode.json.bak" "$TEST_REPO/.opencode/opencode.json"
 
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
 assert_rc 0 "restored setup works again"
+
+group "monorepo layout: agent at the git root, project in a package"
+
+# The harold-mcp shape: the package is a subdirectory of its git repository
+# and the agent is installed at the repository root.
+MONO=/tmp/ponytail-review-pdd-monorepo
+rm -rf "$MONO"
+mkdir -p "$MONO/pkg/.agents/planning/p/design" "$MONO/.opencode/agents"
+git -C "$MONO" init -q
+printf '# Design\nMonorepo design\n' > "$MONO/pkg/.agents/planning/p/design/detailed-design.md"
+cp "$REPO_ROOT/.opencode/agents/ponytail-review-readonly.md" "$MONO/.opencode/agents/"
+cp "$REPO_ROOT/.opencode/opencode.json" "$MONO/.opencode/"
+
+run_in "$MONO/pkg" "$SKILL_DIR/scripts/run-review.sh" --dry-run \
+    --project-dir "$MONO/pkg/.agents/planning/p" --subject tech-design
+assert_rc 0 "monorepo package review starts when the agent is at the git root"
+assert_grep "Agent: *ponytail-review-readonly \(project: $MONO/\.opencode/agents/ponytail-review-readonly\.md\)$" "monorepo finds the agent at the git root"
+assert_grep "Review file:.*detailed-design-review-rev1\.md$" "monorepo resolves the review file"
+
+group "opencode walk: agent installed above the git root"
+
+OUTER=/tmp/ponytail-review-pdd-ancestor
+INNER="$OUTER/inner"
+rm -rf "$OUTER"
+mkdir -p "$INNER/proj/design" "$OUTER/.opencode/agents"
+git -C "$OUTER" init -q
+git -C "$INNER" init -q
+printf '# Design\nAncestor design\n' > "$INNER/proj/design/detailed-design.md"
+cp "$REPO_ROOT/.opencode/agents/ponytail-review-readonly.md" "$OUTER/.opencode/agents/"
+cp "$REPO_ROOT/.opencode/opencode.json" "$OUTER/.opencode/"
+
+run_in "$INNER" "$SKILL_DIR/scripts/run-review.sh" --dry-run \
+    --project-dir "$INNER/proj" --subject tech-design
+assert_rc 0 "agent found above the git root"
+assert_grep "Agent: *ponytail-review-readonly \(project: $OUTER/\.opencode/agents/ponytail-review-readonly\.md\)$" "ancestor walk finds the agent above the git root"
 
 group "invocation from a subdirectory"
 

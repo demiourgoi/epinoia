@@ -57,10 +57,14 @@ current project. You can also name the target explicitly:
     make -C /path/to/epinoia install TARGET_DIR=/path/to/project
 
 This copies every skill from `skills/` into `TARGET_DIR/.agents/skills/`
-(where Zed discovers project skills) and the opencode agent with its config
-from `.opencode/` into `TARGET_DIR/.opencode/` (where opencode discovers it
-from the project root). Existing files are overwritten; other files in the
-target are left untouched. The agent's `LICENSE` sidecar travels with it, so
+(where Zed discovers project skills). The opencode agent with its config goes
+to the **git root** of `TARGET_DIR` (`.opencode/`), or to `TARGET_DIR` itself
+when it is not inside a git repository: opencode discovers `.opencode/`
+directories from its working directory up to the filesystem root, and the
+review script runs opencode at the repository root, so the files must live
+there to be found (an install inside a subdirectory of a repository is
+invisible to it). Existing files are overwritten; other files in the target
+are left untouched. The agent's `LICENSE` sidecar travels with it, so
 attribution stays in place.
 
 ### How to setup Zed for an EdenAI model

@@ -158,37 +158,56 @@ if [[ ! -f "$HONING" ]]; then warn "requirements file not found: $HONING"; fi
 
 # ------------------------------------------------- opencode agent discovery
 
-PROJECT_AGENT_FILE="$GIT_ROOT/.opencode/agents/${AGENT_ID}.md"
+# opencode discovers .opencode directories from its working directory up to
+# the filesystem root, and this script launches opencode at the repository
+# root, so mirror that search here. The nearest agent wins.
 GLOBAL_AGENT_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/agents/${AGENT_ID}.md"
+AGENT_FILE=""
+AGENT_ROOT=""
+_dir="$GIT_ROOT"
+while :; do
+    if [[ -f "$_dir/.opencode/agents/${AGENT_ID}.md" ]]; then
+        AGENT_FILE="$_dir/.opencode/agents/${AGENT_ID}.md"
+        AGENT_ROOT="$_dir"
+        break
+    fi
+    [[ "$_dir" == "/" ]] && break
+    _dir="$(dirname "$_dir")"
+done
 
-if [[ -f "$PROJECT_AGENT_FILE" ]]; then
+if [[ -n "$AGENT_FILE" ]]; then
     AGENT_SOURCE="project"
 elif [[ -f "$GLOBAL_AGENT_FILE" ]]; then
     AGENT_SOURCE="global"
+    AGENT_FILE="$GLOBAL_AGENT_FILE"
     warn "using the globally installed agent $GLOBAL_AGENT_FILE; its read-only permissions were not verified"
 else
     cat >&2 <<EOF
-Error: the opencode agent '$AGENT_ID' is not installed in this project.
-Install it by copying the epinoia repository's .opencode/ directory into $GIT_ROOT:
-  .opencode/agents/${AGENT_ID}.md   (the agent)
-  .opencode/opencode.json            (its read-only permissions)
+Error: the opencode agent '$AGENT_ID' is not installed for this repository.
+opencode discovers .opencode/ from its working directory up to the filesystem
+root, and the reviewer runs at the repository root ($GIT_ROOT), so the agent
+must be installed at the repository root or above it. Install it by copying
+the epinoia repository's .opencode/ directory into $GIT_ROOT (that is what
+`make -C /path/to/epinoia install` does when run from the project directory):
+  $GIT_ROOT/.opencode/agents/${AGENT_ID}.md   (the agent)
+  $GIT_ROOT/.opencode/opencode.json            (its read-only permissions)
 EOF
     exit 1
 fi
 
 if [[ "$AGENT_SOURCE" == "project" ]]; then
     CONFIG_HAS_AGENT="false"
-    for cfg in "$GIT_ROOT/.opencode/opencode.json" "$GIT_ROOT/.opencode/opencode.jsonc" \
-               "$GIT_ROOT/opencode.json" "$GIT_ROOT/opencode.jsonc"; do
+    for cfg in "$AGENT_ROOT/.opencode/opencode.json" "$AGENT_ROOT/.opencode/opencode.jsonc" \
+               "$AGENT_ROOT/opencode.json" "$AGENT_ROOT/opencode.jsonc"; do
         if [[ -f "$cfg" ]] && grep -q '"ponytail-review-readonly"' "$cfg"; then
             CONFIG_HAS_AGENT="true"
             break
         fi
     done
-    if [[ "$CONFIG_HAS_AGENT" != "true" ]] && ! grep -q '^permissions:' "$PROJECT_AGENT_FILE"; then
+    if [[ "$CONFIG_HAS_AGENT" != "true" ]] && ! grep -q '^permissions:' "$AGENT_FILE"; then
         cat >&2 <<EOF
 Error: the agent '$AGENT_ID' has no read-only permissions configured.
-Copy the epinoia repository's .opencode/opencode.json to $GIT_ROOT/.opencode/opencode.json
+Copy the epinoia repository's .opencode/opencode.json to $AGENT_ROOT/.opencode/opencode.json
 (it defines agents."$AGENT_ID".permissions), or add a permissions block to the
 agent's Markdown frontmatter yourself.
 EOF
@@ -325,7 +344,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
     else
         echo "Summary index:  none found"
     fi
-    echo "Agent:          $AGENT_ID ($AGENT_SOURCE)"
+    echo "Agent:          $AGENT_ID ($AGENT_SOURCE: $AGENT_FILE)"
     echo "Model selector: $MODEL_SELECTOR"
     echo
     echo "Prompt:"

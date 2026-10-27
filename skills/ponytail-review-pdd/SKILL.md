@@ -34,10 +34,13 @@ Prerequisites (the scripts check them and report how to fix them):
 
 - `git` and `opencode` are installed, and opencode is authenticated for the
   model's provider.
-- The opencode agent is installed in the repository being reviewed as
-  `.opencode/agents/ponytail-review-readonly.md`, together with the
-  `.opencode/opencode.json` that defines its read-only permissions (all of it
-  lives in the epinoia repository's `.opencode/` directory).
+- The opencode agent is installed at the git root of the repository being
+  reviewed as `.opencode/agents/ponytail-review-readonly.md`, together with
+  the `.opencode/opencode.json` that defines its read-only permissions (all of
+  it lives in the epinoia repository's `.opencode/` directory). opencode
+  discovers `.opencode/` from its working directory up to the filesystem root,
+  so an install in a subdirectory of the repository is not visible to the
+  reviewer, which runs at the repository root.
 
 ## Parameters
 
@@ -187,10 +190,12 @@ Same as Example 2, but the reviewer runs with
 ### The script reports the opencode agent is not installed
 The repository being reviewed must contain
 `.opencode/agents/ponytail-review-readonly.md` and `.opencode/opencode.json`
-with its read-only permissions. Copy the epinoia repository's `.opencode/`
-directory into the repository being reviewed, or run
-`make -C /path/to/epinoia install` from the repository to install into it
-(which also installs the skills), and retry.
+with its read-only permissions **at its git root**: opencode discovers
+`.opencode/` upward from its working directory, and the reviewer runs at the
+repository root, so an install inside a subdirectory is invisible. Copy the
+epinoia repository's `.opencode/` directory into the git root, or run
+`make -C /path/to/epinoia install` from the project to install into it (which
+also installs the skills), and retry.
 
 ### opencode fails with a model or auth error
 Check the model id with `opencode models` and authenticate the provider with
