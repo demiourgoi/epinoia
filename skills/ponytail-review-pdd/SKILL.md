@@ -28,7 +28,9 @@ can be re-reviewed after fixes):
 | `final-pdd-review` | the whole codebase against the PDD project | `{project_dir}/summary-review-rev{J}.md` |
 
 For code reviews the diff is computed first and saved as
-`{project_dir}/changes-{UUID}.diff`; the agent reviews that file.
+`{project_dir}/changes-{UUID}.diff`; the agent reviews that file. Every run
+also saves the full opencode console transcript next to the review file, as
+`{review file base}.log`.
 
 Prerequisites (the scripts check them and report how to fix them):
 
@@ -99,23 +101,29 @@ code subjects (saving `{project_dir}/changes-{UUID}.diff`), picks the next
 free review revision, and launches
 `opencode run --agent ponytail-review-readonly --model <model>#<reasoning_effort> <prompt>`.
 The reviewer is read-only except for the review file, enforced both by its
-prompt and by its opencode permissions.
+prompt and by its opencode permissions. While the review runs, opencode's
+console output goes to the review's `.log` file and the script prints
+progress heartbeats to stderr; at the end it prints only the review report
+(read from the review file).
 
 **Constraints:**
 - You MUST run the command with a timeout of at least 600000 ms (10 minutes), because the reviewer at max reasoning effort reads a lot of context and can take several minutes
 - You MUST NOT add `--auto` or any extra flags to the opencode invocation, because the script already passes exactly what is needed and `--auto` would weaken the read-only permission enforcement
+- You MUST NOT enable opencode verbosity (`--thinking`, `--print-logs`, verbose `--log-level`) or otherwise expand its console output, because everything it prints ends up in your context and can crowd out or truncate the review report you must present
 - You MUST NOT run the opencode agent yourself with a hand-written prompt, because the script is the reviewed source of truth for the prompt, paths, and model
-- If the command fails, You MUST report the full error; You MUST NOT retry more than once without asking the user
-- You MUST NOT touch the generated diff or review files yourself, because they are the reviewer's inputs and outputs
+- If the command fails, You MUST report the full error; the error includes the tail of the `.log` transcript, which you MAY point the user to for the details
+- You MUST NOT touch the generated diff, log, or review files yourself, because they are the reviewer's inputs and outputs
+- You SHOULD report the heartbeats to the user when a review takes long, because they show the review is progressing
 
 ### 3. Present the review result
 
-The script's stdout is the reviewer's response: the full review report (the
-same content it wrote to the review file).
+The script's stdout is the review report, read from the review file (the
+same content the reviewer wrote and replied with). Progress heartbeats and
+the log path go to stderr.
 
 **Constraints:**
-- You MUST print the reviewer's response in full, because the response is the result of this SOP
-- You MUST point the user to the review file path that was written
+- You MUST print the reviewer's report in full, because the report is the result of this SOP
+- You MUST point the user to the review file path that was written, and MAY mention the `.log` transcript next to it
 - You SHOULD highlight the verdict (for example `Verdict: Ship.` or `Verdict: fix 1 and 3 first.`) and the "Must fix" findings when summarizing
 - You MUST NOT modify the review or implement its findings unless the user explicitly asks, because applying fixes is outside this SOP
 
@@ -215,7 +223,15 @@ explicit range instead, or make the changes first.
 Keep the PDD project inside the repository: the reviewer may only write
 review files inside the project it reviews, and paths outside the repository
 can be blocked by its permissions. The script also warns when project_dir is
-the repository root.
+the repository root. The `.log` transcript next to the review file shows what
+the reviewer did.
+
+### I want to see the reviewer's reasoning
+The reviewer's full console transcript, including tool calls, is in the
+`.log` file next to the review file, and it is the debugging source of truth.
+`opencode --thinking` is display-only and deliberately not used by the
+script, because its output would only consume the launching agent's context;
+run opencode manually if you need to watch reasoning live.
 
 ### Parameters are rejected as invalid combinations
 `implementation_step` applies only to `code-uncommitted`/`code-commits`;

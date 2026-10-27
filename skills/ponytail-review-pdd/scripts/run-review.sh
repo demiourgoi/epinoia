@@ -250,6 +250,9 @@ while [[ -e "${REVIEW_BASE}${J}.md" ]]; do
     J=$((J + 1))
 done
 REVIEW_FILE="${REVIEW_BASE}${J}.md"
+# Full opencode console transcript of this review run; kept out of the
+# launching agent's context, on disk only.
+LOG_FILE="${REVIEW_FILE%.md}.log"
 
 # Codebase summary written by the codebase-summary skill (a sibling of the
 # planning directory that contains the PDD project).
@@ -339,6 +342,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
     if [[ "$SUBJECT" == "code-commits" ]]; then echo "Commit range:   $START_COMMIT..$END_COMMIT"; fi
     if [[ "$SUBJECT" == code-* ]]; then echo "Diff file:      $DIFF_FILE"; fi
     echo "Review file:    $REVIEW_FILE"
+    echo "Log file:       $LOG_FILE"
     if [[ -n "$REL_SUMMARY" ]]; then
         echo "Summary index:  $REL_SUMMARY"
     else
@@ -356,6 +360,40 @@ fi
 
 echo "Review file: $REVIEW_FILE" >&2
 if [[ -n "$DIFF_FILE" ]]; then echo "Diff file:   $DIFF_FILE" >&2; fi
+echo "Log file:    $LOG_FILE" >&2
 echo "Launching opencode ($MODEL_SELECTOR); this can take several minutes..." >&2
 
-exec opencode run --agent "$AGENT_ID" --model "$MODEL_SELECTOR" "$PROMPT"
+# Run opencode with its console output on disk instead of in the launching
+# agent's context: only progress heartbeats reach the caller while the review
+# runs, and only the review file is printed at the end. The report is read
+# from the review file the agent must write, so noisy or truncated console
+# output can never swallow it.
+: > "$LOG_FILE"
+opencode run --agent "$AGENT_ID" --model "$MODEL_SELECTOR" "$PROMPT" \
+    >"$LOG_FILE" 2>&1 &
+PID=$!
+START=$(date +%s)
+while kill -0 "$PID" 2>/dev/null; do
+    sleep 30
+    kill -0 "$PID" 2>/dev/null || break
+    printf 'review running: %ss elapsed (transcript: %s)\n' \
+        "$(( $(date +%s) - START ))" "$LOG_FILE" >&2
+done
+set +e
+wait "$PID"
+RC=$?
+set -e
+
+if [[ "$RC" -ne 0 ]]; then
+    echo "Error: opencode exited with status $RC; last lines of the transcript ($LOG_FILE):" >&2
+    tail -n 60 "$LOG_FILE" >&2 || true
+    exit 1
+fi
+if [[ ! -s "$REVIEW_FILE" ]]; then
+    echo "Error: opencode finished but no review file was written ($REVIEW_FILE); last lines of the transcript ($LOG_FILE):" >&2
+    tail -n 60 "$LOG_FILE" >&2 || true
+    exit 1
+fi
+
+echo "Review written to $REVIEW_FILE (full opencode transcript: $LOG_FILE)" >&2
+cat "$REVIEW_FILE"

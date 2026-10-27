@@ -10,9 +10,10 @@
 #   compute-diff.sh --mode uncommitted --out FILE
 #   compute-diff.sh --mode commits --start REF --end REF --out FILE
 #
-# Review artifacts produced by this skill (changes-*.diff files and
-# *-review-rev*.md review files) are excluded from uncommitted diffs, because
-# they are review machinery, not work under review.
+# Review artifacts produced by this skill (changes-*.diff files, and
+# *-review-rev*.md review files with their *-review-rev*.log transcripts) are
+# excluded from uncommitted diffs, because they are review machinery, not work
+# under review.
 #
 # Prints the diff file path on success. Exits non-zero on any problem.
 set -euo pipefail
@@ -81,6 +82,7 @@ case "$MODE" in
             case "$f" in
                 changes-*.diff|*/changes-*.diff) continue ;;      # this skill's diffs
                 *-review-rev*.md) continue ;;                     # this skill's reviews
+                *-review-rev*.log) continue ;;                    # this skill's transcripts
             esac
             git --no-pager diff --no-color --no-index -- /dev/null "$f" >> "$TMP" || true
         done < <(git ls-files --others --exclude-standard)

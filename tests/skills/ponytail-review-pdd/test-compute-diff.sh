@@ -25,12 +25,13 @@ group "review artifacts are excluded from uncommitted diffs"
 
 printf 'stale diff\n' > "$P/changes-stale.diff"
 printf 'stale review\n' > "$P/implementation/step-9-review-rev1.md"
+printf 'stale transcript\n' > "$P/implementation/step-9-review-rev1.log"
 printf 'stale review\n' > "$P/design/detailed-design-review-rev1.md"
 
 run "$SKILL_DIR/scripts/compute-diff.sh" --mode uncommitted --out "$P/changes-test2.diff"
 assert_rc 0 "uncommitted diff with stale artifacts exits 0"
 assert_file_not_grep "^diff --git .*changes-" "$P/changes-test2.diff" "no changes-*.diff artifacts included"
-assert_file_not_grep "^diff --git .*review-rev[0-9]" "$P/changes-test2.diff" "no *-review-rev*.md artifacts included"
+assert_file_not_grep "^diff --git .*review-rev[0-9]" "$P/changes-test2.diff" "no *-review-rev* review artifacts included"
 assert_file_grep "^diff --git a/newfile\.txt" "$P/changes-test2.diff" "non-artifact untracked files still included"
 
 group "commits mode"

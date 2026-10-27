@@ -181,27 +181,33 @@ assert_grep "^Review the technical design located at $SUBJ/design/detailed-desig
 
 group "real run with a stubbed opencode"
 
-# A fake opencode on PATH records the exact arguments run-review.sh execs, so
-# the full execution path (validation -> diff -> review file -> launch) is
-# covered without spending tokens on a real model.
+# A fake opencode on PATH records the exact arguments run-review.sh execs and
+# writes the review file the script expects, so the full execution path
+# (validation -> diff -> review file -> launch -> report) is covered without
+# spending tokens on a real model. The console transcript lands in the .log
+# file, and the script prints the review file content as its report.
 mkdir -p "$WORK_DIR/bin"
-cat > "$WORK_DIR/bin/opencode" <<'STUB'
+cat > "$WORK_DIR/bin/opencode" <<STUB
 #!/usr/bin/env bash
-printf 'arg: %s\n' "$@"
+printf 'arg: %s\n' "\$@"
+mkdir -p "$P/implementation"
+printf 'What this does:\nStub review report.\n' > "$P/implementation/step-1-review-rev1.md"
 STUB
 chmod +x "$WORK_DIR/bin/opencode"
 
 run env PATH="$WORK_DIR/bin:$PATH" "$SKILL_DIR/scripts/run-review.sh" \
     --project-dir "$SUBJ" --subject code-uncommitted --step 1 \
     --model test/model --reasoning-effort high
+LOG="$P/implementation/step-1-review-rev1.log"
 assert_rc 0 "real run against the stub exits 0"
-assert_grep "arg: --agent$" "passes --agent to opencode"
-assert_grep "arg: ponytail-review-readonly$" "selects the reviewer agent"
-assert_grep "arg: --model$" "passes --model to opencode"
-assert_grep "arg: test/model#high$" "passes the composed model selector"
-assert_grep "^arg: Review the code .*changes-.*\.diff corresponding to implementation step 1\.$" "passes the review task as the prompt"
-assert_grep "Write your review to $SUBJ/implementation/step-1-review-rev1\.md" "prompt names the review file"
-assert_grep "Review file: $P/implementation/step-1-review-rev1\.md" "prints the review file before launching"
+assert_file_grep "^arg: --agent$" "$LOG" "passes --agent to opencode"
+assert_file_grep "^arg: ponytail-review-readonly$" "$LOG" "selects the reviewer agent"
+assert_file_grep "^arg: --model$" "$LOG" "passes --model to opencode"
+assert_file_grep "^arg: test/model#high$" "$LOG" "passes the composed model selector"
+assert_file_grep "^arg: Review the code .*changes-.*\.diff corresponding to implementation step 1\.$" "$LOG" "passes the review task as the prompt"
+assert_file_grep "Write your review to $SUBJ/implementation/step-1-review-rev1\.md" "$LOG" "prompt names the review file"
+assert_grep "What this does:" "prints the review file content"
+assert_grep "Review written to $P/implementation/step-1-review-rev1\.md" "reports where the review was written"
 assert_glob_nonempty "$P"/changes-*.diff "real run computes the diff"
 
 group "usage"
