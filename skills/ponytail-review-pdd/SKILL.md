@@ -51,8 +51,8 @@ Prerequisites (the scripts check them and report how to fix them):
 - **implementation_step** (optional): implementation plan step number the code belongs to. Required when review_subject is `code-uncommitted` or `code-commits`; invalid for the other subjects
 - **start_commit** (optional): first commit of the range to review. Required when review_subject is `code-commits`; invalid otherwise
 - **end_commit** (optional, default: "HEAD"): last commit of the range to review. Only valid when review_subject is `code-commits`
-**model** (optional, default: "mistral/zai-glm-5-3"): opencode model in `provider/model` form (e.g. "mistral/zai-glm-5-3"); combined with reasoning_effort as `provider/model#reasoning_effort`
-- **reasoning_effort** (optional, default: "max"): opencode reasoning-effort variant appended to the model selector (e.g. "max", "high"); pass an empty string to use the model without a variant
+- **model** (optional): opencode model in `provider/model` form (e.g. "mistral/zai-glm-5-3"); combined with reasoning_effort as `provider/model#reasoning_effort`. Defaults to the model configured in the reviewer agent's frontmatter (`.opencode/agents/ponytail-review-readonly.md`, currently `mistral/zai-glm-5-3`), which is the single source of truth
+- **reasoning_effort** (optional): opencode reasoning-effort variant appended to the model selector (e.g. "max", "high"); defaults to the variant in the reviewer agent's model line; pass an empty string to use the model without a variant
 
 **Constraints for parameter acquisition:**
 - If all required parameters are already provided, You MUST proceed to the Steps
@@ -84,7 +84,7 @@ step for code reviews, commit range for `code-commits`), the PDD artifacts
 (detailed design for `tech-design`, implementation plan and a matching
 `Step {I}:` heading for code reviews), and the opencode setup. It prints the
 resolved review file, the diff file, the codebase summary detection, the model
-selector (default: `mistral/zai-glm-5-3#max`), and the exact prompt that will be sent to the reviewer agent.
+selector, and the exact prompt that will be sent to the reviewer agent.
 
 **Constraints:**
 - You MUST run the script with `--dry-run` before the real run, because it shows exactly what will be reviewed and catches setup errors before anything is launched
@@ -104,7 +104,7 @@ The reviewer is read-only except for the review file, enforced both by its
 prompt and by its opencode permissions. While the review runs, opencode's
 console output goes to the review's `.log` file and the script prints
 progress heartbeats to stderr; at the end it prints only the review report
-(read from the review file). The default model selector is `mistral/zai-glm-5-3#max`.
+(read from the review file).
 
 **Constraints:**
 - You MUST run the command with a timeout of at least 600000 ms (10 minutes), because the reviewer at max reasoning effort reads a lot of context and can take several minutes
@@ -137,7 +137,7 @@ the log path go to stderr.
 
 **Expected Behavior:**
 The agent validates the design exists, then the script launches the reviewer
-with the default model (`mistral/zai-glm-5-3#max`). The reviewer reads
+with the default model. The reviewer reads
 `design/detailed-design.md`, the rough idea, `idea-honing.md`, and the
 research notes, and writes `design/detailed-design-review-rev1.md`. Its
 response (the report) is printed as the result.

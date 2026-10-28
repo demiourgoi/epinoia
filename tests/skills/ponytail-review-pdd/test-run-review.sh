@@ -69,6 +69,33 @@ assert_grep "Model selector: mistral/zai-glm-5-3-flash$" "empty reasoning effort
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --model test/model --reasoning-effort high
 assert_grep "Model selector: test/model#high$" "reasoning effort is appended as #variant"
 
+# The default model is not hardcoded in the script: it comes from the agent's
+# own frontmatter (single source of truth, shared with opencode itself).
+AGENT_MD="$TEST_REPO/.opencode/agents/ponytail-review-readonly.md"
+sed -i 's/^model:.*/model: test\/agent-model#high/' "$AGENT_MD"
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
+assert_rc 0 "agent model line drives the default selector"
+assert_grep "Model selector: test/agent-model#high$" "default selector follows the agent's model line"
+
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --reasoning-effort max
+assert_grep "Model selector: test/agent-model#max$" "effort override combines with the agent's model"
+
+sed -i 's/^model:.*/model: test\/agent-model/' "$AGENT_MD"
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
+assert_grep "Model selector: test/agent-model$" "agent model without variant selects no variant"
+
+grep -v '^model:' "$AGENT_MD" > "$AGENT_MD.tmp" && mv "$AGENT_MD.tmp" "$AGENT_MD"
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design
+assert_rc 1 "agent without model line and no --model fails"
+assert_grep "has no 'model:' line" "missing agent model line error message"
+
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --model test/explicit
+assert_rc 0 "explicit --model works without an agent model line"
+assert_grep "Model selector: test/explicit$" "--model override without effort uses no variant"
+
+# Restore the installed agent for the later setup-guard tests.
+cp "$REPO_ROOT/.opencode/agents/ponytail-review-readonly.md" "$AGENT_MD"
+
 group "parameter validation"
 
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject bogus

@@ -20,17 +20,17 @@
 #                          code-uncommitted and code-commits)
 #   --start-commit REF     first commit of the range (required for code-commits)
 #   --end-commit REF       last commit of the range (default: HEAD; code-commits only)
-#   --model MODEL          opencode model (default: mistral/zai-glm-5-3)
-#   --reasoning-effort E   reasoning-effort variant appended as #E; default: max;
-#                          pass an empty value to use the model without a variant
+#   --model MODEL          opencode model (default: the model configured in
+#                          the agent's frontmatter)
+#   --reasoning-effort E   reasoning-effort variant appended as #E (default:
+#                          the variant in the agent's model line); pass an
+#                          empty value to use the model without a variant
 #   --dry-run              validate, show resolved paths and the prompt; do not
 #                          compute the diff and do not launch opencode
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENT_ID="ponytail-review-readonly"
-DEFAULT_MODEL="mistral/zai-glm-5-3"
-DEFAULT_REASONING_EFFORT="max"
 
 usage() {
     cat >&2 <<EOF
@@ -48,9 +48,11 @@ Options:
   --start-commit REF    first commit of the range (required for code-commits)
   --end-commit REF      last commit of the range (default: HEAD; code-commits
                         only)
-  --model MODEL         opencode model (default: $DEFAULT_MODEL)
-  --reasoning-effort E  reasoning-effort variant appended as #E (default:
-                        $DEFAULT_REASONING_EFFORT; empty value = no variant)
+  --model MODEL         opencode model in provider/model form (default: the
+                        model configured in the agent's frontmatter)
+  --reasoning-effort E  reasoning-effort variant appended as #E (default: the
+                        variant in the agent's model line; empty value = no
+                        variant)
   --dry-run             validate and show the plan and prompt; no side effects
   -h, --help            show this help
 EOF
@@ -65,8 +67,9 @@ STEP=""
 START_COMMIT=""
 END_COMMIT=""
 END_GIVEN="false"
-MODEL="$DEFAULT_MODEL"
-REASONING_EFFORT="$DEFAULT_REASONING_EFFORT"
+MODEL=""
+REASONING_EFFORT=""
+EFFORT_GIVEN="false"
 DRY_RUN="false"
 
 while [[ $# -gt 0 ]]; do
@@ -77,7 +80,7 @@ while [[ $# -gt 0 ]]; do
         --start-commit)     START_COMMIT="${2:-}"; shift 2 ;;
         --end-commit)       END_COMMIT="${2:-}"; END_GIVEN="true"; shift 2 ;;
         --model)            MODEL="${2:-}"; shift 2 ;;
-        --reasoning-effort) REASONING_EFFORT="${2:-}"; shift 2 ;;
+        --reasoning-effort) REASONING_EFFORT="${2:-}"; EFFORT_GIVEN="true"; shift 2 ;;
         --dry-run)          DRY_RUN="true"; shift ;;
         -h|--help)          usage; exit 0 ;;
         *) die "unknown argument: $1 (see --help)" ;;
@@ -215,6 +218,30 @@ EOF
     fi
 fi
 
+# ------------------------------------------------------------- model choice
+
+# The default model is not hardcoded here. The single source of truth is the
+# reviewer agent's own frontmatter (its `model:` line, provider/model#variant),
+# which opencode also uses when the agent runs without an explicit --model, so
+# the script and the agent configuration cannot drift apart.
+AGENT_SELECTOR="$(sed -n 's/^model:[[:space:]]*//p' "$AGENT_FILE" | head -n 1)"
+if [[ -z "$MODEL" ]]; then
+    if [[ -z "$AGENT_SELECTOR" ]]; then
+        die "the agent file $AGENT_FILE has no 'model:' line; pass --model explicitly"
+    fi
+    MODEL="${AGENT_SELECTOR%%#*}"
+fi
+if [[ "$EFFORT_GIVEN" != "true" ]]; then
+    REASONING_EFFORT="${AGENT_SELECTOR#*#}"
+    [[ "$REASONING_EFFORT" == "$AGENT_SELECTOR" ]] && REASONING_EFFORT=""
+fi
+
+if [[ -n "$REASONING_EFFORT" ]]; then
+    MODEL_SELECTOR="${MODEL}#${REASONING_EFFORT}"
+else
+    MODEL_SELECTOR="$MODEL"
+fi
+
 # ------------------------------------------------------------ review target
 
 DIFF_FILE=""
@@ -259,14 +286,6 @@ LOG_FILE="${REVIEW_FILE%.md}.log"
 SUMMARY_INDEX=""
 if [[ -f "$PROJECT_ABS/../../summary/index.md" ]]; then
     SUMMARY_INDEX="$PROJECT_ABS/../../summary/index.md"
-fi
-
-# ------------------------------------------------------------- model choice
-
-if [[ -n "$REASONING_EFFORT" ]]; then
-    MODEL_SELECTOR="${MODEL}#${REASONING_EFFORT}"
-else
-    MODEL_SELECTOR="$MODEL"
 fi
 
 # ---------------------------------------------------------- relative paths
