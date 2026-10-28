@@ -32,11 +32,11 @@ reviews are deliberately not automated — a real review spends serious
 reasoning money; the full `run-review.sh` execution path is covered
 hermetically by a stubbed-opencode test, and a real review can be exercised
 by running the skill itself. The e2e model defaults to
-`edenai/zai/glm-5.3-flash` and can be overridden with the `E2E_MODEL` and
+`mistral/zai-glm-5-3-flash` and can be overridden with the `E2E_MODEL` and
 `E2E_REASONING_EFFORT` environment variables, for example:
 
 ```bash
-E2E_MODEL=edenai/zai/glm-5.3 E2E_REASONING_EFFORT=max tests/run.sh --e2e-only
+E2E_MODEL=mistral/zai-glm-5-3 E2E_REASONING_EFFORT=max tests/run.sh --e2e-only
 ```
 
 ## Conventions

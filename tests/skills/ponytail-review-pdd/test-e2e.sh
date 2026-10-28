@@ -12,12 +12,12 @@
 # opencode test instead (see test-run-review.sh). To exercise a real review,
 # run the skill itself against a real project.
 #
-# The model defaults to edenai/zai/glm-5.3-flash; override with the E2E_MODEL
+# The model defaults to mistral/zai-glm-5-3-flash; override with the E2E_MODEL
 # and E2E_REASONING_EFFORT environment variables.
 set -u
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-E2E_MODEL="${E2E_MODEL:-edenai/zai/glm-5.3-flash}"
+E2E_MODEL="${E2E_MODEL:-mistral/zai-glm-5-3-flash}"
 E2E_EFFORT="${E2E_REASONING_EFFORT:-}"   # default: no variant
 
 SELECTOR="$E2E_MODEL"

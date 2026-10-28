@@ -13,7 +13,7 @@
 #   tests/run.sh --e2e-only   only the live end-to-end suites
 #
 # End-to-end model overrides (see the e2e suites):
-#   E2E_MODEL                (default: edenai/zai/glm-5.3-flash)
+#   E2E_MODEL                (default: mistral/zai-glm-5-3-flash)
 #   E2E_REASONING_EFFORT     (default: empty, no variant)
 set -u
 

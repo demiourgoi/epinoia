@@ -20,7 +20,7 @@
 #                          code-uncommitted and code-commits)
 #   --start-commit REF     first commit of the range (required for code-commits)
 #   --end-commit REF       last commit of the range (default: HEAD; code-commits only)
-#   --model MODEL          opencode model (default: edenai/zai/glm-5.3)
+#   --model MODEL          opencode model (default: mistral/zai-glm-5-3)
 #   --reasoning-effort E   reasoning-effort variant appended as #E; default: max;
 #                          pass an empty value to use the model without a variant
 #   --dry-run              validate, show resolved paths and the prompt; do not
@@ -29,7 +29,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENT_ID="ponytail-review-readonly"
-DEFAULT_MODEL="edenai/zai/glm-5.3"
+DEFAULT_MODEL="mistral/zai-glm-5-3"
 DEFAULT_REASONING_EFFORT="max"
 
 usage() {

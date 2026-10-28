@@ -20,7 +20,7 @@ assert_grep "rough idea \($SUBJ/rough-idea\.md\)" "tech-design prompt stresses t
 assert_grep "requirements refined in $SUBJ/idea-honing\.md" "tech-design prompt stresses idea-honing.md"
 assert_grep "Research notes are under $SUBJ/research\." "tech-design prompt stresses the research"
 assert_grep "first read \.agents/summary/index\.md" "tech-design prompt points at the codebase summary index"
-assert_grep "Model selector: edenai/zai/glm-5\.3#max$" "default model selector is edenai/zai/glm-5.3#max"
+assert_grep "Model selector: mistral/zai-glm-5-3#max$" "default model selector is mistral/zai-glm-5-3#max"
 assert_grep "Agent: *ponytail-review-readonly \(project: $TEST_REPO/\.opencode/agents/ponytail-review-readonly\.md\)$" "agent found in the project"
 assert_missing "$P/design/detailed-design-review-rev1.md" "dry-run writes no review file"
 assert_glob_empty "$P"/changes-*.diff "dry-run computes no diff"
@@ -62,9 +62,9 @@ assert_grep "Review file:.*implementation/step-2-review-rev2\.md$" "step review 
 
 group "model selector"
 
-run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --model edenai/zai/glm-5.3-flash --reasoning-effort ""
+run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --model mistral/zai-glm-5-3-flash --reasoning-effort ""
 assert_rc 0 "model override dry-run exits 0"
-assert_grep "Model selector: edenai/zai/glm-5\.3-flash$" "empty reasoning effort omits the #variant"
+assert_grep "Model selector: mistral/zai-glm-5-3-flash$" "empty reasoning effort omits the #variant"
 
 run "$SKILL_DIR/scripts/run-review.sh" --dry-run --project-dir "$SUBJ" --subject tech-design --model test/model --reasoning-effort high
 assert_grep "Model selector: test/model#high$" "reasoning effort is appended as #variant"
