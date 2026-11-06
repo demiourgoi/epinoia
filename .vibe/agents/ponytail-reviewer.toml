@@ -53,6 +53,8 @@ allowlist = [
   "git blame",
   "git ls-files",
   "git rev-parse",
+  "git merge-base",
+  "git check-ignore",
   "rg",
   "grep",
   "find",
