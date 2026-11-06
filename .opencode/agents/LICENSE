@@ -24,7 +24,7 @@ SOFTWARE.
 Provenance and modifications:
 
 This opencode agent is derived from the "ponytail-review" agent skill
-(skills/ponytail-review/SKILL.md) of https://github.com/dietrichgebert/ponytail.
+(skills/ponytail-review/SKILL.md) of https://github.com/DietrichGebert/ponytail.
 The skill's YAML frontmatter was dropped because agent Markdown files carry
 opencode agent configuration there instead; the body became the agent's system
 prompt with these modifications by demiourgoi:

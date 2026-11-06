@@ -103,7 +103,7 @@ Summarize the result for the user.
 ### Example 1: Modified ponytail agent skill (MIT)
 
 **Input:**
-- upstream_url: https://github.com/dietrichgebert/ponytail
+- upstream_url: https://github.com/DietrichGebert/ponytail
 - license_id: MIT
 - content_path: .opencode/agent/ponytail-lazy.md
 - status: modified

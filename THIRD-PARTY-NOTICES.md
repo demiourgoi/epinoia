@@ -59,7 +59,7 @@ so it travels with the skill when the directory is copied elsewhere
 
 ## ponytail
 
-- Project: https://github.com/dietrichgebert/ponytail
+- Project: https://github.com/DietrichGebert/ponytail
 - Upstream copyright: Copyright (c) 2026 DietrichGebert
 - License: MIT — full text in LICENSES/MIT.txt
 
@@ -67,8 +67,15 @@ so it travels with the skill when the directory is copied elsewhere
 
 | File | Upstream source | Status |
 | --- | --- | --- |
+| `skills/ponytail-review/SKILL.md` | `skills/ponytail-review/SKILL.md` | verbatim copy |
 | `.opencode/agents/ponytail-review-readonly.md` | `skills/ponytail-review/SKILL.md` | modified derivative |
 
+- `skills/ponytail-review` is the upstream skill copied verbatim: the
+  `SKILL.md` is byte-identical to upstream and was deliberately left without
+  frontmatter changes or in-file attribution, so it stays diffable against
+  future upstream versions. The `LICENSE` sidecar next to it records the
+  upstream copyright and the provenance, and travels with the skill when
+  `make install` copies it elsewhere.
 - The custom opencode agent was derived from the upstream `ponytail-review`
   agent skill: the skill frontmatter was dropped, the body became the agent's
   system prompt, a hard read-only restriction (with the review file as the

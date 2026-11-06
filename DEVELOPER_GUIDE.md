@@ -12,13 +12,14 @@ instead of `.sop.md` SOP files). All remain licensed under Apache-2.0 —
 see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 
-### Skills based on [ponytail](https://github.com/dietrichgebert/ponytail)
+### Skills based on [ponytail](https://github.com/DietrichGebert/ponytail)
 
+`skills/ponytail-review` is the upstream `ponytail-review` agent skill copied
+verbatim (byte-identical, MIT-licensed), shipped as an installable artifact.
 `.opencode/agents/ponytail-review-readonly.md` is a custom opencode agent
-derived from a modification of the `ponytail-review` agent skill of the
-ponytail repo (MIT-licensed): the skill body became the agent's system
-prompt with a hard read-only restriction, and section 3 ("Check before you
-report") was kept verbatim. Its read-only permissions live in
+derived from a modification of that same skill: the skill body became the
+agent's system prompt with a hard read-only restriction, and section 3 ("Check
+before you report") was kept verbatim. Its read-only permissions live in
 `.opencode/opencode.json` (`agents.ponytail-review-readonly.permissions`),
 which also ships the agent. `skills/ponytail-review-pdd` is the skill that
 launches the agent to review PDD artifacts; its tests live in

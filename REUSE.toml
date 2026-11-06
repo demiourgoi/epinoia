@@ -48,6 +48,16 @@ SPDX-FileCopyrightText = [
 ]
 SPDX-License-Identifier = "MIT"
 
+# Verbatim copy from DietrichGebert/ponytail (MIT). Kept byte-identical to
+# upstream; the LICENSE sidecar records the provenance.
+[[annotations]]
+path = [
+    "skills/ponytail-review/SKILL.md",
+    "skills/ponytail-review/LICENSE",
+]
+SPDX-FileCopyrightText = "Copyright (c) 2026 DietrichGebert"
+SPDX-License-Identifier = "MIT"
+
 # Modified derivatives of strands-agents/agent-sop. Human-readable notices
 # live in LICENSE sidecars next to the skills; annotations keep the SKILL.md
 # files free of in-file headers.
