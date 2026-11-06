@@ -21,9 +21,11 @@ derived from a modification of that same skill: the skill body became the
 agent's system prompt with a hard read-only restriction, and section 3 ("Check
 before you report") was kept verbatim. Its read-only permissions live in
 `.opencode/opencode.json` (`agents.ponytail-review-readonly.permissions`),
-which also ships the agent. `skills/ponytail-review-pdd` is the skill that
-launches the agent to review PDD artifacts; its tests live in
-`tests/skills/ponytail-review-pdd`. See
+which also ships the agent. `.vibe/agents/ponytail-reviewer.toml` is the
+equivalent vibe agent: it references the skill by name and restricts itself to
+read-only tools (`enabled_tools`/`disabled_tools`). `skills/ponytail-review-pdd`
+is the skill that launches the opencode agent to review PDD artifacts; its
+tests live in `tests/skills/ponytail-review-pdd`. See
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution.
 
 ## How To
@@ -46,7 +48,7 @@ opencode authentication and spend a few cents of tokens; full LLM reviews are
 deliberately not automated because they cost real reasoning money. See
 [tests/README.md](tests/README.md) for details.
 
-### How to install the skills and opencode agent into a project
+### How to install the skills and agent config into a project
 
 From the project to install into, run:
 
@@ -58,15 +60,17 @@ current project. You can also name the target explicitly:
     make -C /path/to/epinoia install TARGET_DIR=/path/to/project
 
 This copies every skill from `skills/` into `TARGET_DIR/.agents/skills/`
-(where Zed discovers project skills). The opencode agent with its config goes
-to the **git root** of `TARGET_DIR` (`.opencode/`), or to `TARGET_DIR` itself
-when it is not inside a git repository: opencode discovers `.opencode/`
-directories from its working directory up to the filesystem root, and the
-review script runs opencode at the repository root, so the files must live
-there to be found (an install inside a subdirectory of a repository is
-invisible to it). Existing files are overwritten; other files in the target
-are left untouched. The agent's `LICENSE` sidecar travels with it, so
-attribution stays in place.
+(where Zed discovers project skills). The opencode agent and config go to the
+**git root** of `TARGET_DIR` (`.opencode/`), or to `TARGET_DIR` itself when it
+is not inside a git repository: opencode discovers `.opencode/` directories
+from its working directory up to the filesystem root, and the review script
+runs opencode at the repository root, so the files must live there to be found
+(an install inside a subdirectory of a repository is invisible to them). The
+vibe agent and config go to `TARGET_DIR` itself (`.vibe/`), because vibe runs
+from the project directory and loads the closest `.vibe/` walking up from it.
+Existing files are overwritten; other files in the target are left untouched.
+The opencode agent's `LICENSE` sidecar travels with it, so attribution stays in
+place.
 
 ### How to setup Zed for an EdenAI model
 
@@ -100,3 +104,10 @@ text, keep verbatim files byte-identical, add `LICENSE` sidecars and the
 `license` frontmatter field for modified derivatives, update
 `THIRD-PARTY-NOTICES.md` and `REUSE.toml`, and validate with
 `uvx reuse lint`.
+
+## References
+
+- [Mistral Vibe CLI docs](https://docs.mistral.ai/vibe/code/cli/install-setup)
+  - [Agents](https://docs.mistral.ai/vibe/code/cli/agents). See also [agents configuration reference](https://docs.mistral.ai/vibe/code/cli/configuration-reference#agent-files)
+  - [Built-in tools](https://github.com/mistralai/mistral-vibe#features): it claims a `grep` tool that does not exist on vibe 3.1.0
+  - [Permissions](https://docs.mistral.ai/vibe/code/safety-approvals-permissions#tool-permissions)

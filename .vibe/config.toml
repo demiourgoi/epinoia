@@ -1,0 +1,7 @@
+show_thinking_nodes = true
+
+[[models]]
+name = "zai-glm-5-3"
+thinking = "max"
+provider = "mistral"
+alias = "reviewer"

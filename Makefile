@@ -16,13 +16,15 @@ help: ## Show the available targets
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-10s %s\n", $$1, $$2}'
 
 # Copy the distributable skills into TARGET_DIR/.agents/skills/ (where Zed
-# discovers project skills). The opencode agent plus its config go to the git
+# discovers project skills). The opencode agent plus its config goes to the git
 # root of TARGET_DIR, or to TARGET_DIR itself when it is not inside a git
 # repository: opencode discovers .opencode directories from its working
 # directory up to the filesystem root, and the review script runs opencode at
-# the repository root, so the files must live there to be found. Existing
-# files are overwritten; other files in the target are left untouched.
-install: ## Install skills + opencode agent/config (opencode files go to the target's git root)
+# the repository root, so those files must live there to be found. The vibe
+# agent plus its config goes to TARGET_DIR itself: vibe runs from the project
+# directory and loads the closest .vibe/ walking up from it. Existing files are
+# overwritten; other files in the target are left untouched.
+install: ## Install skills + opencode/vibe agent config (opencode files go to the target's git root)
 	@if [ -z "$(TARGET_DIR)" ]; then \
 		echo "Error: could not determine TARGET_DIR (PWD is unset or empty); pass it explicitly, for example: make install TARGET_DIR=../my-project" >&2; \
 		exit 2; \
@@ -31,17 +33,20 @@ install: ## Install skills + opencode agent/config (opencode files go to the tar
 		echo "Error: target directory does not exist: $(TARGET_DIR)" >&2; \
 		exit 2; \
 	fi; \
-	OPENCODE_DIR="$$(git -C "$(TARGET_DIR)" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$(TARGET_DIR)")"; \
-	if [ "$$(cd "$$OPENCODE_DIR" && pwd -P)" = "$$(cd "$(REPO_DIR)" && pwd -P)" ]; then \
+	AGENT_DIR="$$(git -C "$(TARGET_DIR)" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$(TARGET_DIR)")"; \
+	if [ "$$(cd "$$AGENT_DIR" && pwd -P)" = "$$(cd "$(REPO_DIR)" && pwd -P)" ]; then \
 		echo "Error: TARGET_DIR is this repository (or resolves to it); choose the project to install into" >&2; \
 		exit 2; \
 	fi; \
 	mkdir -p "$(TARGET_DIR)/.agents/skills"; \
 	cp -R "$(REPO_DIR)/skills/." "$(TARGET_DIR)/.agents/skills/"; \
-	mkdir -p "$$OPENCODE_DIR/.opencode"; \
-	cp -R "$(REPO_DIR)/.opencode/." "$$OPENCODE_DIR/.opencode/"; \
+	mkdir -p "$$AGENT_DIR/.opencode"; \
+	cp -R "$(REPO_DIR)/.opencode/." "$$AGENT_DIR/.opencode/"; \
+	mkdir -p "$(TARGET_DIR)/.vibe"; \
+	cp -R "$(REPO_DIR)/.vibe/." "$(TARGET_DIR)/.vibe/"; \
 	echo "Installed skills:         $(TARGET_DIR)/.agents/skills"; \
-	echo "Installed opencode agent: $$OPENCODE_DIR/.opencode"
+	echo "Installed opencode agent: $$AGENT_DIR/.opencode"; \
+	echo "Installed vibe agent:     $(TARGET_DIR)/.vibe"
 
 # Hermetic test suite for the whole repository (no network, no model calls).
 test: ## Run the hermetic test suite

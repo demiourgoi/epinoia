@@ -17,6 +17,8 @@ path = [
     "THIRD-PARTY-NOTICES.md",
     "bin/agent-sop-to-skill.sh",
     ".opencode/opencode.json",
+    ".vibe/config.toml",
+    ".vibe/agents/ponytail-reviewer.toml",
     "skills/edenai-zed-config/SKILL.md",
     "skills/ponytail-review-pdd/SKILL.md",
     "skills/ponytail-review-pdd/scripts/compute-diff.sh",

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Hermetic tests for the repository Makefile's install target: skills go to
-# TARGET_DIR/.agents/skills/, the opencode agent plus config go to the git
-# root of TARGET_DIR (or to TARGET_DIR itself outside a git repository), and
-# bad targets are rejected.
+# TARGET_DIR/.agents/skills/, the opencode agent plus config go to the git root
+# of TARGET_DIR (or to TARGET_DIR itself outside a git repository), the vibe
+# agent plus config go to TARGET_DIR, and bad targets are rejected.
 set -u
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -26,13 +26,17 @@ assert_exists "$MONOREPO/.opencode/agents/ponytail-review-readonly.md" "installs
 assert_exists "$MONOREPO/.opencode/agents/LICENSE" "installs the agent license sidecar at the git root"
 assert_exists "$MONOREPO/.opencode/opencode.json" "installs the opencode config at the git root"
 assert_file_grep "ponytail-review-readonly" "$MONOREPO/.opencode/opencode.json" "installed config defines the agent permissions"
+assert_exists "$PKG/.vibe/config.toml" "installs the vibe config into the package"
+assert_exists "$PKG/.vibe/agents/ponytail-reviewer.toml" "installs the vibe agent into the package"
 assert_missing "$PKG/.opencode/opencode.json" "does not install opencode files into the package"
+assert_missing "$MONOREPO/.vibe/config.toml" "does not install vibe files at the git root"
 
 group "install target: TARGET_DIR is the git root"
 
 run make -C "$REPO_ROOT" install TARGET_DIR="$MONOREPO"
 assert_rc 0 "install into the repository root exits 0"
 assert_exists "$MONOREPO/.opencode/opencode.json" "installs the opencode config into the repository root"
+assert_exists "$MONOREPO/.vibe/config.toml" "installs the vibe config into the repository root"
 assert_exists "$MONOREPO/.agents/skills/ponytail-review-pdd/SKILL.md" "installs the skills into the repository root"
 
 group "install target: default TARGET_DIR is the caller's PWD"
@@ -43,6 +47,7 @@ run env PWD="$DEFAULT_DIR" make -C "$REPO_ROOT" install
 assert_rc 0 "install without explicit TARGET_DIR exits 0"
 assert_exists "$DEFAULT_DIR/.agents/skills/ponytail-review-pdd/SKILL.md" "default install uses the caller's PWD for skills"
 assert_exists "$DEFAULT_DIR/.opencode/opencode.json" "default install falls back to TARGET_DIR outside a repository"
+assert_exists "$DEFAULT_DIR/.vibe/config.toml" "default install puts the vibe config in TARGET_DIR outside a repository"
 rm -rf "$DEFAULT_DIR"
 
 group "install target: reinstall"
@@ -50,6 +55,7 @@ group "install target: reinstall"
 run make -C "$REPO_ROOT" install TARGET_DIR="$PKG"
 assert_rc 0 "reinstall exits 0"
 assert_exists "$MONOREPO/.opencode/opencode.json" "reinstall keeps the config in place"
+assert_exists "$PKG/.vibe/config.toml" "reinstall keeps the vibe config in place"
 
 group "install target: guards"
 

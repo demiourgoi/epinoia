@@ -1,0 +1,89 @@
+# Usage:
+# vibe --agent ponytail-reviewer --trust --add-dir "$HOME/git"
+# vibe --agent ponytail-reviewer --trust --add-dir "$HOME/git" "Review the HEAD commit"
+agent_type = "agent"
+display_name = "Ponytail reviewer"
+description = "Read-only agent for code and tech design reviews, based on ponytail skills."
+# Note the instructions for the bash built-in tool will try to use absolute paths
+# so we need to counter that with a shell rules section
+instructions = """
+For every task, load the ponytail-review skill and follow its process.
+Review code or tech designs read-only: inspect files, collect findings, and report.
+
+You MUST use `rg` (ripgrep) for content search; there is no grep tool. `rg` cannot
+select a line range, so read files only with `read_file` (the one exception is
+`rg -n -C 5 <pattern> <path>` for context around a match):
+- Whole file: `read_file` with `file_path`.
+- Lines N..M: `read_file` with `file_path`, `offset=N`, `limit=M-N+1` (`offset`
+  is 1-based). Example: to read lines 430-470 of `tests/unit/test_interpreter_tool.py`,
+  call `read_file` with `offset=430, limit=41` and `file_path` pointing at that file.
+- Never open or slice files with `sed`, `awk`, `cat`, `nl`, or with `head`/`tail` used
+  directly on a file. `head`/`tail` may only terminate a pipeline after `rg`.
+
+Shell rules (strict):
+- The shell starts in the session working directory. Run git commands bare:
+  `git show --stat HEAD`, `git diff`, `git log --oneline -10`.
+- Never change directory: no `cd`, no `pushd`, no `git -C`, no `--git-dir`, no
+  `--work-tree`. Vibe's bash tool says "prefer absolute paths": that applies to
+  file arguments, not to the shell's working directory. These forms are
+  denylisted and fail with a tool error; do not retry them. If the review needs
+  another directory, stop and say so in the report instead.
+- You are PROHIBITED from using shell commands if a built-in tool can accomplish the task.
+- All relevant code is located at ~/git
+
+Never modify project files, with one exception: always write the final review
+report to .review.md in the working directory root, replacing its entire
+previous content on every run. Do not create or edit any other file.
+"""
+safety = "neutral"
+# no grep tool even though https://github.com/mistralai/mistral-vibe/#features says there is
+enabled_tools = ["read_file", "todo", "ask_user_question", "skill", "bash", "write_file"]
+active_model = "reviewer"
+
+[tools.bash]
+permission = "ask"
+# https://docs.mistral.ai/vibe/code/safety-approvals-permissions#bash-allow-deny
+# For the bash tool, you can also allow or block specific commands by **prefix**
+allowlist = [
+  "git status",
+  "git log",
+  "git diff",
+  "git show",
+  "git remote -v",
+  "git blame",
+  "git ls-files",
+  "git rev-parse",
+  "rg",
+  "grep",
+  "find",
+  "ls",
+  "cat",
+  "head",
+  "tail",
+  "wc",
+]
+denylist = [
+  "git push",
+  "git commit",
+  "git reset",
+  "git checkout",
+  "git rebase",
+  "git merge",
+  "git clean",
+  "git branch -D",
+  "git branch -d",
+  "rm",
+  # file slicing belongs to read_file (offset/limit), not the shell
+  "sed",
+  "awk",
+  "cat",
+  "grep",
+  "git -C",
+  "git --git-dir",
+  "git --work-tree",
+]
+
+[tools.write_file]
+permission = "ask"
+allowlist = ["**/.review.md"]
+outside_workdir = "deny"
