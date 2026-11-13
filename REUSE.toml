@@ -11,6 +11,16 @@ version = 1
 [[annotations]]
 path = [
     ".gitignore",
+    "AGENTS.md",
+    ".agents/summary/architecture.md",
+    ".agents/summary/codebase_info.md",
+    ".agents/summary/components.md",
+    ".agents/summary/data_models.md",
+    ".agents/summary/dependencies.md",
+    ".agents/summary/index.md",
+    ".agents/summary/interfaces.md",
+    ".agents/summary/review_notes.md",
+    ".agents/summary/workflows.md",
     "Makefile",
     "README.md",
     "DEVELOPER_GUIDE.md",
