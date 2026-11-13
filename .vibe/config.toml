@@ -4,4 +4,6 @@ show_thinking_nodes = true
 name = "zai-glm-5-3"
 thinking = "max"
 provider = "mistral"
+max_context_length = 1000000
+auto_compact_threshold = 800000
 alias = "reviewer"
