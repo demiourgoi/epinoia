@@ -16,7 +16,6 @@ from aletheia_mcp.settings import Settings
 def fresh_service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ReviewService:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(service_module.web_server, "ensure_running", lambda _settings: "http://127.0.0.1:12345")
-    monkeypatch.setattr(service_module.web_server, "current_url", lambda _settings: "http://127.0.0.1:12345")
     service = ReviewService(Settings(host="127.0.0.1"))
     set_service(service)
     return service

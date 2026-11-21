@@ -23,6 +23,10 @@ from aletheia_mcp.web import server as web_server
 class ReviewService:
     """Coordinates the baseline and live diffs for one process."""
 
+    def _url(self) -> str:
+        """The review URL; starts the loopback server on first use."""
+        return web_server.ensure_running(self.settings)
+
     def __init__(self, settings: Settings, store: BaselineStore | None = None) -> None:
         self.settings = settings
         self.baselines = store or BaselineStore()
@@ -35,7 +39,7 @@ class ReviewService:
             msg = "record_baseline needs at least one file path."
             raise InvalidDecisionError(msg)
         recorded = self.baselines.record(resolved)
-        url = web_server.ensure_running(self.settings)
+        url = self._url()
         return {
             "url": url,
             "recorded": sorted(str(path) for path, b in recorded.items() if b.content is not None),
@@ -57,7 +61,7 @@ class ReviewService:
                 "kind": _kind(baseline, current),
                 "changed": has_text_change(baseline, current),
             })
-        return {"url": web_server.current_url(self.settings), "files_in_baseline": len(files), "files": files}
+        return {"url": self._url(), "files_in_baseline": len(files), "files": files}
 
     def remove_from_baseline(self, paths: list[str]) -> dict[str, Any]:
         """Adopt the working directory for the given paths (approve-file)."""
@@ -116,7 +120,7 @@ class ReviewService:
                 "current": current,
                 "diff": unified_diff(baseline, current, str(path)),
             })
-        return {"url": web_server.current_url(self.settings), "files": files}
+        return {"url": self._url(), "files": files}
 
 
 def _kind(baseline: str | None, current: str | None) -> str:
