@@ -288,6 +288,35 @@ runs over synthetic payloads; e2e rewritten to the new flow (record →
 edit → live payload → save edit + approve keeps the tweak on disk →
 reject deletes the created file → empty baseline, constant URL).
 
+## Step 10 (rev 2) — Implementation notes (PR review round attendance)
+
+The author's ponytail review of the PR (round 2) was attended on the
+branch. Findings and outcomes:
+- (Must 1) `rollback_to_baseline` half-applied a rollback on duplicate or
+  already-decided paths. Fixed: `_resolve_all` now dedupes resolved paths
+  (order-stable), rollback prechecks every baseline entry under the
+  operation lock before touching the disk (the same pattern as
+  `BaselineStore.remove`), and `NotInBaselineError` now explains both
+  possible causes (never recorded, or already decided).
+- (Should 2) no origin/content-type check on the loopback API. Fixed:
+  `LoopbackGuard` middleware requires `Content-Type: application/json`
+  on mutating `/api` routes (a `no-cors` form POST cannot send it) and
+  rejects any `Origin`/`Referer` that is not loopback (403).
+- (Should 3) `webui/tsconfig.tsbuildinfo` committed. Already removed and
+  ignored in the third-party-notices commit; noted to the reviewer.
+- (Nice 4) switching files or a live refresh dropped unsaved GUI edits.
+  Fixed: per-path draft map; the diff pane remounts only when the
+  selected file changes or its on-disk content actually changed, and
+  prunes drafts of files that left review.
+- Author request outside the review: the review page moved to `/review`
+  (the bare root redirects), leaving room for future pages; the tool
+  results now return URLs ending in `/review`.
+Tests added for all of the above (dedupe/precheck of rollback,
+guard 403s incl. loopback-origin allow, draft-preserving refresh
+indirectly via pane remount logic, `/review` + root redirect in both
+the TestClient and the real-server e2e); 71 tests green, ruff + mypy
+clean, GUI rebuilt.
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the

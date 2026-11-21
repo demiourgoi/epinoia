@@ -44,7 +44,8 @@ def ensure_running(settings: Settings) -> str:
         deadline = time.monotonic() + _START_TIMEOUT_SECS
         while time.monotonic() < deadline:
             if server.started:
-                _url = f"http://{_socket_address(server)[0]}:{_socket_address(server)[1]}"
+                host, port = _socket_address(server)
+                _url = f"http://{host}:{port}/review"
                 return _url
             if server.should_exit or not thread.is_alive():
                 break

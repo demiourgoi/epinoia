@@ -56,8 +56,13 @@ export function DiffPane({ path, baseline, current, onEdit }: DiffPaneProps) {
       gutter: true,
       parent: container.current,
     });
+    // Rebuilds only on language load; document switches and live refreshes
+    // remount this component (key includes a render tick from App), so
+    // keystrokes never rebuild the editor and drop the cursor or unsaved
+    // edits.
     return () => merge.destroy();
-  }, [baseline, current, language]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   return <div className="diff" ref={container} />;
 }

@@ -36,18 +36,20 @@ def test_full_review_over_real_http(tmp_path: Path, monkeypatch) -> None:
 
     record = json.loads(call_tool("record_baseline", {"paths": ["Main.java", "app.py"]}))
     base = record["url"]
+    assert base.endswith("/review")
     assert record["marked_for_creation"] == [str(created)]
+    api_root = base.rsplit("/review", 1)[0]
 
     main.write_text("class Main {\n    int x = 1;\n}\n")
     created.write_text("print('hi')\n")
 
     def get_json(path: str) -> dict:
-        with urllib.request.urlopen(base + path) as response:
+        with urllib.request.urlopen(api_root + path) as response:
             return json.loads(response.read())
 
     def post(path: str, body: dict, method: str = "POST") -> dict:
         request = urllib.request.Request(
-            base + path,
+            api_root + path,
             data=json.dumps(body).encode(),
             headers={"content-type": "application/json"},
             method=method,
@@ -55,9 +57,12 @@ def test_full_review_over_real_http(tmp_path: Path, monkeypatch) -> None:
         with urllib.request.urlopen(request) as response:
             return json.loads(response.read())
 
-    # GUI payload at the constant URL.
-    with urllib.request.urlopen(base + "/") as page:
+    # The GUI lives at /review; the bare server root redirects to it.
+    assert base.endswith("/review")
+    with urllib.request.urlopen(base) as page:
         assert page.status == 200
+    with urllib.request.urlopen(api_root) as response:
+        assert response.geturl().endswith("/review")
     payload = get_json("/api/review")
     kinds = {f["path"]: f["kind"] for f in payload["files"]}
     assert kinds[str(main)] == "modified" and kinds[str(created)] == "created"

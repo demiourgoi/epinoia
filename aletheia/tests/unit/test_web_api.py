@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -120,3 +121,45 @@ def test_built_gui_is_packaged() -> None:
     assert index.exists(), "run `make webui` and commit src/aletheia_mcp/webui/dist"
     assert (DIST_DIR / "assets").exists()
     assert "aletheia" in index.read_text().lower()
+
+
+def test_mutating_routes_require_json_content_type(client: TestClient) -> None:
+    resp = client.post(
+        "/api/baseline/files",
+        content=json.dumps({"paths": ["x"]}),
+        headers={"content-type": "text/plain"},
+    )
+    assert resp.status_code == 403
+    assert "Content-Type" in resp.json()["error"]
+
+
+def test_cross_origin_requests_rejected(client: TestClient) -> None:
+    for header in ("origin", "referer"):
+        resp = client.post(
+            "/api/baseline/files",
+            json={"paths": ["x"]},
+            headers={header: "https://evil.example.com/page"},
+        )
+        assert resp.status_code == 403
+        assert header in resp.json()["error"]
+
+
+def test_loopback_origin_allowed(client: TestClient, tmp_path: Path) -> None:
+    (tmp_path / "ok.txt").write_text("x\n")
+    resp = client.post(
+        "/api/baseline/files",
+        json={"paths": ["ok.txt"]},
+        headers={"origin": "http://127.0.0.1:12345"},
+    )
+    assert resp.status_code == 200
+
+
+def test_get_routes_skip_the_guard(client: TestClient) -> None:
+    assert client.get("/api/review").status_code == 200
+
+
+def test_root_redirects_to_review_page(client: TestClient) -> None:
+    resp = client.get("/", follow_redirects=False)
+    assert resp.status_code == 307
+    assert resp.headers["location"] == "/review"
+    assert client.get("/review").status_code == 200

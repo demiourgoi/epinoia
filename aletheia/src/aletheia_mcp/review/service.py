@@ -82,8 +82,11 @@ class ReviewService:
             msg = "rollback_to_baseline needs at least one file path."
             raise InvalidDecisionError(msg)
         with self._lock:
-            for path in resolved:
-                baseline = self.baselines.get(path).content
+            # Precheck every entry before touching the disk, like remove():
+            # a missing (or already decided) path must fail before any file
+            # is reverted, or the change set ends up half-rejected.
+            snapshots = {path: self.baselines.get(path).content for path in resolved}
+            for path, baseline in snapshots.items():
                 try:
                     if baseline is None:
                         disk.delete(path)
@@ -132,8 +135,15 @@ def _kind(baseline: str | None, current: str | None) -> str:
 
 
 def _resolve_all(paths: list[str]) -> list[Path]:
-    """Resolve user/agent-supplied paths (absolute or CWD-relative)."""
-    return [Path(path).expanduser().resolve() for path in paths]
+    """Resolve user/agent-supplied paths (absolute or CWD-relative), deduped.
+
+    Two spellings of one file ("a.txt" and "./a.txt") are one path; without
+    the dedup the same file could be acted on twice in one operation.
+    """
+    ordered_unique: dict[Path, None] = {}
+    for path in paths:
+        ordered_unique.setdefault(Path(path).expanduser().resolve())
+    return list(ordered_unique)
 
 
 _service_lock = threading.Lock()

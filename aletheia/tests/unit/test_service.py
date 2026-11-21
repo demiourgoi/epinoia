@@ -189,3 +189,31 @@ def test_rerecord_resets_round(service: ReviewService, tmp_path: Path) -> None:
     assert service.baselines.get(a).content == "two\n"
     service.rollback_to_baseline(["a.py"])
     assert a.read_text() == "two\n"
+
+
+def test_rollback_duplicate_spellings_are_one_path(service: ReviewService, tmp_path: Path) -> None:
+    a = tmp_path / "a.txt"
+    a.write_text("original\n")
+    service.record_baseline(["a.txt"])
+    a.write_text("edited\n")
+    # Two spellings of one path must not double-apply a rollback.
+    result = service.rollback_to_baseline([str(a), "a.txt", str(tmp_path / "." / "a.txt")])
+    assert result["rolled_back"] == [str(a)]
+    assert a.read_text() == "original\n"
+    assert len(service.baselines) == 0
+
+
+def test_rollback_missing_path_fails_before_any_disk_effect(service: ReviewService, tmp_path: Path) -> None:
+    a = tmp_path / "a.txt"
+    a.write_text("original\n")
+    b = tmp_path / "b.txt"
+    b.write_text("b-original\n")
+    service.record_baseline(["a.txt", "b.txt"])
+    a.write_text("a-edited\n")
+    b.write_text("b-edited\n")
+    with pytest.raises(Exception, match="not under review"):
+        service.rollback_to_baseline(["a.txt", "nowhere.txt"])
+    # Nothing was reverted: the precheck failed before the disk effects.
+    assert a.read_text() == "a-edited\n"
+    assert b.read_text() == "b-edited\n"
+    assert service.baselines.paths() == [a, b]

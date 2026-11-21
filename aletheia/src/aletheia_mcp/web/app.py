@@ -9,10 +9,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -24,6 +28,43 @@ from aletheia_mcp.errors import (
 )
 
 DIST_DIR = Path(__file__).resolve().parent.parent / "webui" / "dist"
+
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+class LoopbackGuard(BaseHTTPMiddleware):
+    """Only this machine's pages may drive the mutating review API.
+
+    The GUI is a loopback service, but any web page in the user's browser
+    can POST to a local socket with `no-cors` and a text/plain body that
+    we would otherwise parse. Mutating requests must therefore declare
+    `application/json` (which `no-cors` cannot) and, when they carry an
+    Origin or Referer, it must be loopback.
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if request.url.path.startswith("/api/") and request.method in ("POST", "DELETE"):
+            problem = _guard_problem(request.headers, request.url.hostname)
+            if problem is not None:
+                return JSONResponse({"error": problem}, status_code=403)
+        return await call_next(request)
+
+
+def _guard_problem(headers: Headers, request_host: str | None) -> str | None:
+    content_type = headers.get("content-type", "")
+    if content_type.split(";")[0].strip().lower() != "application/json":
+        msg = "Mutating requests must have Content-Type application/json."
+        return msg
+    for header in ("origin", "referer"):
+        value = headers.get(header)
+        if not value:
+            continue
+        host = urlsplit(value).hostname
+        if host not in LOOPBACK_HOSTS and host != request_host:
+            msg = f"Cross-origin {header} header is not allowed on this loopback API."
+            return msg
+    return None
+
 
 FALLBACK_INDEX = """<!doctype html><html><head><meta charset="utf-8">
 <title>Aletheia</title></head>
@@ -132,9 +173,14 @@ async def review_page(request: Request) -> Response:
     return HTMLResponse(FALLBACK_INDEX)
 
 
+async def root_page(request: Request) -> Response:
+    return RedirectResponse("/review", status_code=307)
+
+
 def create_app() -> Starlette:
     routes: list[Any] = [
-        Route("/", review_page),
+        Route("/", root_page),
+        Route("/review", review_page),
         Route("/api/review", get_review, methods=["GET"]),
         Route("/api/baseline/files", add_to_baseline, methods=["POST"]),
         Route("/api/baseline/files", remove_from_baseline, methods=["DELETE"]),
@@ -144,4 +190,4 @@ def create_app() -> Starlette:
     assets = DIST_DIR / "assets"
     if assets.exists():
         routes.append(Mount("/assets", app=StaticFiles(directory=assets), name="assets"))
-    return Starlette(routes=routes)
+    return Starlette(routes=routes, middleware=[Middleware(LoopbackGuard)])

@@ -54,7 +54,7 @@ Typical loop:
 
 ```text
 record_baseline(["src/main.py", "src/new_file.py"])
-→ {"url": "http://127.0.0.1:53412", "recorded": [...], "marked_for_creation": [...]}
+→ {"url": "http://127.0.0.1:53412/review", "recorded": [...], "marked_for_creation": [...]}
 (edit src/main.py; create src/new_file.py; run tests — show the URL to the user)
 get_change_status()
 → {"files": [{"path": "...", "kind": "modified", "changed": true}, ...]}
@@ -110,7 +110,9 @@ Client configuration (any MCP host that supports stdio):
 | `ALETHEIA_HOST` | `127.0.0.1` | bind host of the review web GUI (loopback only by default) |
 
 There is no port setting: the review server binds an OS-assigned free
-port and the URL is returned by `record_baseline`.
+port and the URL is returned by `record_baseline`. The review page lives
+at `/review` (the bare root redirects there), leaving the URL space free
+for future pages.
 
 ## Development
 

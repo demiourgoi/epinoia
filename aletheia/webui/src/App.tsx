@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ReviewPayload,
   removeFromBaseline,
@@ -18,29 +18,60 @@ export function App() {
   const [review, setReview] = useState<ReviewPayload | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(0);
-  const [editedDoc, setEditedDoc] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [renderTick, setRenderTick] = useState(0);
   const [busy, setBusy] = useState(false);
+  const diskAtLastRender = useRef<Record<string, string | null>>({});
 
   const refresh = useCallback(async () => {
     try {
       const payload = await fetchReview();
       setReview(payload);
       setError("");
+      // Keep unsaved edits alive across refreshes: only remount the diff
+      // pane when the selected file actually changed on disk, so a live
+      // agent edit does not silently drop what the user typed. Drafts for
+      // files that left review (approve/reject) are pruned too.
+      setDrafts((current) => {
+        const alive = new Set(payload.files.map((entry) => entry.path));
+        const stale = Object.keys(current).filter((path) => !alive.has(path));
+        if (stale.length === 0) return current;
+        const next = { ...current };
+        for (const path of stale) delete next[path];
+        return next;
+      });
+      const current = payload.files[selected];
+      if (current) {
+        const before = diskAtLastRender.current[current.path];
+        if (before !== undefined && before !== current.current) {
+          setRenderTick((tick) => tick + 1);
+        }
+        diskAtLastRender.current[current.path] = current.current;
+      }
     } catch (cause) {
       setError(String(cause instanceof Error ? cause.message : cause));
     }
-  }, []);
+  }, [selected]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const act = async (action: () => Promise<Record<string, unknown>>) => {
+  const act = async (
+    action: () => Promise<Record<string, unknown>>,
+    donePath?: string,
+  ) => {
     if (busy) return;
     setBusy(true);
     try {
       await action();
-      setEditedDoc(null);
+      if (donePath) {
+        setDrafts((current) => {
+          const next = { ...current };
+          delete next[donePath];
+          return next;
+        });
+      }
       await refresh();
     } catch (cause) {
       setError(String(cause instanceof Error ? cause.message : cause));
@@ -50,6 +81,7 @@ export function App() {
   };
 
   const file = review?.files[selected];
+  const draft = file ? drafts[file.path] : undefined;
   const allPaths = review ? review.files.map((f) => f.path) : [];
 
   return (
@@ -94,10 +126,7 @@ export function App() {
               <li
                 key={entry.path}
                 className={index === selected ? "selected" : ""}
-                onClick={() => {
-                  setSelected(index);
-                  setEditedDoc(null);
-                }}
+                onClick={() => setSelected(index)}
               >
                 <span className="path" title={entry.path}>
                   {entry.path}
@@ -120,20 +149,23 @@ export function App() {
                 Reject
               </button>
               <button
-                disabled={busy || editedDoc === null}
+                disabled={busy || draft === undefined}
                 onClick={() =>
-                  editedDoc !== null && void act(() => saveContent(file.path, editedDoc))
+                  void act(() => saveContent(file.path, draft as string), file.path)
                 }
               >
                 Save edit
               </button>
-              {editedDoc !== null && <span className="pending-edit">unsaved edit</span>}
+              {draft !== undefined && <span className="pending-edit">unsaved edit</span>}
             </div>
             <DiffPane
+              key={`${file.path}:${renderTick}`}
               path={file.path}
               baseline={file.baseline}
-              current={file.current}
-              onEdit={setEditedDoc}
+              current={draft ?? file.current}
+              onEdit={(doc: string) =>
+                setDrafts((current) => ({ ...current, [file.path]: doc }))
+              }
             />
           </section>
         )}

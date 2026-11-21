@@ -18,8 +18,10 @@ class NotInBaselineError(AletheiaError):
 
     def __init__(self, path: str) -> None:
         super().__init__(
-            f"{path!r} is not in the baseline. Call record_baseline with this path "
-            "before editing it (or before deciding on it)."
+            f"{path!r} is not in the baseline, so it is not under review. Either it "
+            "was never recorded (call record_baseline before editing it) or its "
+            "review already ended (approve/remove or reject/rollback drops the "
+            "entry; record_baseline starts a new round)."
         )
 
 
