@@ -44,5 +44,15 @@ class InvalidDecisionError(AletheiaError):
     """A decision payload is malformed or unknown."""
 
 
+class DiskEffectError(AletheiaError):
+    """A review decision could not be applied to disk (file, action, cause)."""
+
+    def __init__(self, path: str, action: str) -> None:
+        super().__init__(
+            f"Could not apply {action!r} to {path!r}: the file was left unchanged. "
+            "Check permissions and that no parent directory is missing."
+        )
+
+
 class ServerStartError(AletheiaError):
     """The review web server could not be started (for example a busy port)."""

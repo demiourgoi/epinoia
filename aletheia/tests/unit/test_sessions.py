@@ -179,3 +179,19 @@ def test_store_evicts_oldest(tmp_path: Path) -> None:
     assert len(store) == 2
     with pytest.raises(UnknownSessionError):
         store.get(s1.session_id)
+
+
+def test_disk_failure_wrapped_with_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import aletheia_mcp.review.disk as disk_module
+    from aletheia_mcp.errors import DiskEffectError
+
+    def boom(path: Path, content: str) -> None:
+        raise OSError("read-only")
+
+    monkeypatch.setattr(disk_module, "write_text", boom)
+    f = tmp_path / "a.py"
+    f.write_text("edit")
+    session = make_session([FileReview(f, "orig", "edit")])
+    with pytest.raises(DiskEffectError, match="save_edit"):
+        session.decide(0, "save_edit", content="x")
+    assert session.files[0].status == "pending"

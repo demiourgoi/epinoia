@@ -9,7 +9,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 
-from aletheia_mcp.errors import AlreadyDecidedError, InvalidDecisionError
+from aletheia_mcp.errors import AlreadyDecidedError, DiskEffectError, InvalidDecisionError
 from aletheia_mcp.review import disk
 from aletheia_mcp.review.diffs import canonical_diff_text, unified_diff
 
@@ -82,16 +82,22 @@ class ReviewSession:
             if action == "approve":
                 file.status = "approved"
             elif action == "reject":
-                if file.baseline is None:
-                    disk.delete(file.path)
-                else:
-                    disk.write_text(file.path, file.baseline)
+                try:
+                    if file.baseline is None:
+                        disk.delete(file.path)
+                    else:
+                        disk.write_text(file.path, file.baseline)
+                except OSError as error:
+                    raise DiskEffectError(str(file.path), action) from error
                 file.status = "rejected"
             elif action == "save_edit":
                 if content is None:
                     msg = "save_edit requires the edited file content."
                     raise InvalidDecisionError(msg)
-                disk.write_text(file.path, content)
+                try:
+                    disk.write_text(file.path, content)
+                except OSError as error:
+                    raise DiskEffectError(str(file.path), action) from error
                 file.status = "edited"
             else:
                 msg = f"Unknown decision action {action!r}; expected approve, reject or save_edit."
@@ -124,7 +130,10 @@ class ReviewSession:
 def compute_session_id(files: list[FileReview]) -> tuple[str, str]:
     """Deterministic id (hash of the canonical diff set) plus that text.
 
-    Identical changes always map to the same id (project requirement).
+    Identical changes always map to the same id (project requirement). The
+    id is process-local addressing of an in-memory session only (never
+    persisted), so the absolute paths in the canonical text have no
+    external effect.
     """
     canonical = "\n".join(
         canonical_diff_text(file.baseline, file.current_at_open, str(file.path))
