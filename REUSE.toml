@@ -213,3 +213,13 @@ SPDX-FileCopyrightText = [
     "Copyright (c) Facebook, Inc. and its affiliates.",
 ]
 SPDX-License-Identifier = "MIT"
+
+# Screenshots of the review GUI (original demiourgoi content; the depicted
+# code is a small demo snippet also original to this project).
+[[annotations]]
+path = [
+    "aletheia/docs/screenshots/review-diff-java.png",
+    "aletheia/docs/screenshots/review-diff-python.png",
+]
+SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"

@@ -129,6 +129,12 @@ highlighting). Its built output is committed to
 `src/aletheia_mcp/webui/dist` so the published wheel ships the GUI
 without requiring Node at install time.
 
+## Screenshots
+
+| Java file under review | Python file under review |
+| --- | --- |
+| ![Java diff with syntax highlighting and red/green changed chunks](docs/screenshots/review-diff-java.png) | ![Python diff with syntax highlighting](docs/screenshots/review-diff-python.png) |
+
 ## Third-party components
 
 The review GUI is built with [React](https://react.dev/) and
