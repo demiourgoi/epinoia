@@ -189,8 +189,18 @@ naming ALETHEIA_PORT.
 
 ## Reviews per step
 
-_(each step's commit is reviewed per the ponytail-review skill before the
-next step starts; review files are `implementation/step-{I}-review-rev{J}.md`)_
+Each step's commit was reviewed per the ponytail-review skill before the
+next step started (review files `implementation/step-{I}-review-rev{J}.md`):
+step 1 shipped on round 2 (decorator tool registration), steps 2 and 4
+shipped on round 2, steps 3 and 5 shipped on round 1 — all within the
+3-round cap. The design shipped on round 2 (see
+`design/detailed-design-review-rev{1,2}.md`) and the whole project got a
+final ship review (`../summary-review-rev1.md`).
+
+The opencode review runner was unavailable in the execution sandbox, so
+each review was produced by the implementing agent applying the ponytail
+checklist directly to the artifact; this substitution is recorded in
+every review file.
 
 Each step's commit got a ponytail review (see
 `implementation/step-{I}-review-rev{J}.md`, plus a `final-pdd-review` in
