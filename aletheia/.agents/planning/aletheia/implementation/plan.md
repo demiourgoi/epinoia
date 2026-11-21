@@ -259,6 +259,35 @@ in-memory-client loop incl. drift polling and mirrored decisions.
 Deviation: none (the DELETE route uses `request("DELETE", ...)` in tests:
 this starlette TestClient's `.delete` takes no json kwarg).
 
+## Step 8 (rev 2) — Implementation notes
+
+Completed as planned: the GUI becomes a single constant-URL review page:
+live file list from `GET /api/review` with Created/Deleted/Modified and
+unchanged badges, per-file Approve (DELETE baseline), Reject (rollback),
+Save edit (POST content, with an "unsaved edit" hint), global Approve
+all / Reject all / Refresh, and an empty-baseline state. `webui/dist`
+rebuilt. Live smoke over the real loopback server: GUI and assets 200,
+live diff reflected an ongoing edit, rollback deleted the created file
+(now also covered by the rewritten e2e test). Deviation: none of
+substance (Starlette's TestClient needs `request("DELETE", ..., json=)`
+since its `.delete` takes no body kwarg).
+
+## Step 9 (rev 2) — Implementation notes
+
+Completed as planned: `aletheia setup` (cyclopts command, `--global` for
+`~/.vibe`, mirroring harold-mcp's setup shape) installs the
+`aletheia-baseline` post_tool reminder hook: merge-safe append into
+`.vibe/hooks.toml` keyed on the unique hook name, plus the standalone
+`.vibe/hooks/aletheia_baseline.py` reading `file_path`/`path`/`filename`
+from the payload and silent otherwise. FastMCP server instructions and
+tool docstrings document the baseline-before-edit protocol. README
+rewritten to the v2 model (new tools, constant URL, free port with only
+`ALETHEIA_HOST` configurable, hook section). Tests: installer
+merge/idempotency plus the hook script exercised with real subprocess
+runs over synthetic payloads; e2e rewritten to the new flow (record →
+edit → live payload → save edit + approve keeps the tweak on disk →
+reject deletes the created file → empty baseline, constant URL).
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the
