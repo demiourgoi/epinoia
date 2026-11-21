@@ -1,7 +1,7 @@
 # Implementation plan: Aletheia
 
 - [x] Step 1: Project skeleton runnable as `aletheia` on Python 3.14
-- [ ] Step 2: Review core — baselines, sessions, diffs, disk effects
+- [x] Step 2: Review core — baselines, sessions, diffs, disk effects
 - [ ] Step 3: MCP tools — record_baseline, open_review, get_review_status
 - [ ] Step 4: Loopback web server, JSON API, React diff GUI
 - [ ] Step 5: Packaging parity, README, end-to-end verification
@@ -119,7 +119,19 @@ aletheia --help` and the in-memory client demo pass.
 
 ## Step 2 — Implementation notes
 
-_(to be filled on completion)_
+Completed as planned: `aletheia_mcp/review/` with `baselines.py` (UTF-8
+validation with byte offsets in errors, created-marker, re-record
+overwrite, thread-safe store), `diffs.py` (unified diffs with stable
+`<created>`/`<deleted>` markers, canonical id text), `disk.py` (atomic
+temp+`os.replace` writes, deletions, never creates directories), and
+`sessions.py` (FileReview/ReviewSession with the edited-is-pending status
+machine, state-changes-only-after-disk, deterministic 12-hex ids,
+collision suffix, LRU cap with documented shortcut, lock-guarded decide).
+39 unit tests over real files in tmp_path cover validation, all status
+transitions, disk effects, ids, eviction, and 409-domain errors.
+Deviation: none of substance; the collision-suffix branch is only
+reachable via a truncated-SHA256 collision, so its test forces the digest
+with monkeypatch (documented as a shortcut).
 
 ## Step 3 — Implementation notes
 
