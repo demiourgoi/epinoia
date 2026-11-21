@@ -1,6 +1,9 @@
-"""Placeholder connectivity tool (will be joined by the review tools)."""
+"""Server health tools."""
+
+from aletheia_mcp.server.server import mcp
 
 
+@mcp.tool
 def ping() -> str:
-    """Check the Aletheia MCP server is alive; returns 'pong'."""
+    """Check that the Aletheia MCP server is alive; returns 'pong'."""
     return "pong"

@@ -2,12 +2,11 @@
 
 Importing this module builds the `mcp` instance but does **not** initialize
 any transport; the review web server is only started lazily, when a session
-is opened.
+is opened. Tools register themselves on `mcp` when the tools package is
+imported (see `aletheia_mcp.server`).
 """
 
 from fastmcp import FastMCP
-
-from aletheia_mcp.server.tools import system
 
 mcp: FastMCP = FastMCP(
     "aletheia",
@@ -26,10 +25,3 @@ def run() -> None:
 
 
 __all__ = ["mcp", "run"]
-
-
-def _register_tools() -> None:
-    mcp.tool(system.ping)
-
-
-_register_tools()
