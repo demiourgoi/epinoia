@@ -21,6 +21,7 @@ _START_TIMEOUT_SECS = 10.0
 
 _lock = threading.Lock()
 _server: uvicorn.Server | None = None
+_serving: tuple[str, int] | None = None
 
 
 def base_url(settings: Settings) -> str:
@@ -34,10 +35,17 @@ def session_url(session_id: str, settings: Settings) -> str:
 
 def ensure_running(settings: Settings) -> None:
     """Start the review server if needed; make the URL contract hold."""
-    global _server
+    global _server, _serving
     with _lock:
         if _server is not None and _server.started:
-            return
+            if _serving == (settings.host, settings.port):
+                return
+            host, port = _serving if _serving else ("", 0)
+            msg = (
+                f"The review web server already runs on {host}:{port}; "
+                "one process serves one host:port. Restart with a different ALETHEIA_PORT."
+            )
+            raise ServerStartError(msg)
         config = uvicorn.Config(
             create_app(),
             host=settings.host,
@@ -52,6 +60,7 @@ def ensure_running(settings: Settings) -> None:
         while time.monotonic() < deadline:
             if server.started:
                 _server = server
+                _serving = (settings.host, settings.port)
                 return
             if server.should_exit or not thread.is_alive():
                 break

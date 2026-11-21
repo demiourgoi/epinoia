@@ -4,7 +4,7 @@
 - [x] Step 2: Review core — baselines, sessions, diffs, disk effects
 - [x] Step 3: MCP tools — record_baseline, open_review, get_review_status
 - [x] Step 4: Loopback web server, JSON API, React diff GUI
-- [ ] Step 5: Packaging parity, README, end-to-end verification
+- [x] Step 5: Packaging parity, README, end-to-end verification
 
 ## Working agreements
 
@@ -173,7 +173,19 @@ unit tests so no ports are bound).
 
 ## Step 5 — Implementation notes
 
-_(to be filled on completion)_
+Completed as planned: `uv build` produces a wheel that ships the built GUI
+(`aletheia_mcp/webui/dist/index.html` present in the wheel; verified via
+zipfile listing and `uvx --from dist/*.whl aletheia --version` on
+Python 3.14). The E2E integration test starts the real uvicorn thread on an
+ephemeral free port and drives the whole flow through the MCP client and
+plain HTTP: record → edit (Java + created Python file) → open_review →
+GUI page + session API → save_edit + approve (disk keeps the user's tweak)
+→ reject of the created file (deleted from disk) → get_review_status
+(mixed). Packaging guarded by an importlib.resources asset test. README
+(usage, env vars, tool protocol) and CONTRIBUTING added. Deviation: the
+host:port mismatch guard in `ensure_running` (one process serves one
+host:port) emerged from writing the E2E test; documented as a clear error
+naming ALETHEIA_PORT.
 
 ## Reviews per step
 
