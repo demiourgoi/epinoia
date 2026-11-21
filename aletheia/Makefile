@@ -6,6 +6,8 @@ install: ## Install the virtual environment (Python 3.14)
 webui: ## Build the review web GUI into the package
 	@echo "🛠️ Building the web UI"
 	cd webui && npm ci && npm run build
+	cp webui/dist-sidecar/LICENSE src/aletheia_mcp/webui/dist/LICENSE
+	cp webui/dist-sidecar/assets/README.md src/aletheia_mcp/webui/dist/assets/README.md
 
 check: ## Run code quality tools
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"

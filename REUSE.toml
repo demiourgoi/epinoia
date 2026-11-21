@@ -199,3 +199,17 @@ SPDX-FileCopyrightText = [
     "Copyright (c) Facebook, Inc. and its affiliates.",
 ]
 SPDX-License-Identifier = "MIT"
+
+# Source copies of the web UI build-output sidecars (webui/dist/LICENSE and
+# webui/dist/assets/README.md): `make webui` regenerates them into the
+# committed build output, so they carry the same bundled-library notices.
+[[annotations]]
+path = [
+    "aletheia/webui/dist-sidecar/LICENSE",
+    "aletheia/webui/dist-sidecar/assets/README.md",
+]
+SPDX-FileCopyrightText = [
+    "Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others",
+    "Copyright (c) Facebook, Inc. and its affiliates.",
+]
+SPDX-License-Identifier = "MIT"

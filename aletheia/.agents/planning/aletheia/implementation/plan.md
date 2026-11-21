@@ -315,7 +315,12 @@ Tests added for all of the above (dedupe/precheck of rollback,
 guard 403s incl. loopback-origin allow, draft-preserving refresh
 indirectly via pane remount logic, `/review` + root redirect in both
 the TestClient and the real-server e2e); 71 tests green, ruff + mypy
-clean, GUI rebuilt.
+clean, GUI rebuilt. Follow-up caught while pushing: Vite's
+`emptyOutDir` deletes the committed build-output sidecars (dist/LICENSE
+and assets/README.md) on every rebuild, so their source copies now live
+in `webui/dist-sidecar/` and `make webui` copies them back after the
+build; REUSE annotations and THIRD-PARTY-NOTICES updated accordingly
+(reuse lint 234/234).
 
 ## Reviews per step
 
