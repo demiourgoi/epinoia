@@ -118,3 +118,92 @@ UTF-8 text).
 
 *(Requirements clarification is complete; all remaining decisions are
 technical design questions handled in the design phase.)*
+
+---
+
+# Revision 2 — post-PR alignment (agreed with the author)
+
+Recorded retroactively per the unattended mandate, from the author's
+review of the first implementation. The requirements below supersede Q4,
+Q3 partially (reject semantics), Q8 (session store) and the parts of the
+design relying on change sessions.
+
+## Q12: Should the MCP server and the web app share one HTTP process
+## (FastMCP `http_app` mounting), autodetecting the port?
+
+**Alternatives considered:** mounting the MCP server into the web app
+(FastMCP/FastAPI integration) so one uvicorn serves both; passing the
+port via env var.
+
+**Chosen answer:** keep the stdio MCP transport (harnesses spawn stdio
+servers; an HTTP MCP endpoint is only reachable by config with a known
+URL, so mounting moves the launch burden to the user and conflicts with
+free-port autodetection). Instead: **autodetect a free port** (bind to
+port 0) when the review server starts, and communicate it through the
+mechanism that already exists — the `record_baseline` tool result carries
+the URL. `ALETHEIA_PORT` is removed; `ALETHEIA_HOST` stays (loopback
+default).
+
+## Q13: Do we need change sessions at all?
+
+**Chosen answer: no.** Zed was re-researched: the review baseline is "the
+file as it was right before the agent's turn", there is at most one review
+in flight per agent thread, the review temporarily overlays the git diff,
+and keep/reject are actions, not persistent states. A single baseline per
+MCP process (= per agent conversation) reproduces this structurally.
+
+**Rationale / benefits of the new approach:**
+- **One concept instead of two.** Sessions duplicated state (status
+  machines, store, evictions, 409 semantics) on top of what baselines
+  already express. The baseline alone now answers "what is under review".
+- **Faithful to Zed.** Zed re-anchors the baseline every turn; our
+  baseline is reset per path by re-recording (`record_baseline` is the
+  reset), so "several sets of changes in one session" is supported by the
+  same operation.
+- **Live review.** The diff is computed against the working directory on
+  demand, so the GUI reflects the agent's ongoing edits instead of a
+  frozen snapshot.
+- **Constant URL.** No session ids → no encoded state in the URL; the
+  user keeps one tab per conversation.
+- **Decisions shrink the baseline.** A baseline entry exists *only while
+  its file is under review*: approve = drop the entry (adopt the working
+  directory); reject = restore the pre-change content on disk *then* drop
+  the entry (rationale: after a rejected change we do not know whether
+  the agent will touch the file again, so it leaves review; the next edit
+  round requires a deliberate `record_baseline`). "Not in baseline"
+  therefore unambiguously means "not under review".
+- **No decided-state machine.** The 409/already-decided semantics
+  disappear; a repeated decision on a path not in the baseline is a clear
+  error.
+
+## Q14: What is the operation set?
+
+**Chosen answer:** three baseline operations over *sets of paths*,
+exposed as REST endpoints on the web app and as mirrored MCP tools:
+`add` (snapshot now; re-add resets a round), `remove` (adopt working dir;
+approve-file / approve-all are `remove` over a set), `rollback` (restore
+baseline content, creation-markers delete, then drop entries). The GUI's
+editable pane keeps writing the working directory (atomic) — that is the
+"edit before approving" flow. Live status: per baseline file,
+created/modified/deleted and whether content still differs.
+
+## Q15: How do we keep the baseline well maintained?
+
+**Chosen answer:** a Vibe **hook** (`post_tool`, matching edit/write
+tools) installed by `aletheia setup` (mirroring harold-mcp's skill
+setup): it reads the edited path from the hook payload and appends
+`additional_context` reminding the agent to `record_baseline` the path if
+it is not recorded. Together with the MCP server and tool descriptions
+instructing baseline-before-edit, this makes skipping the baseline a
+visible agent mistake. v1 is best-effort coaching only: hooks run in
+separate processes and cannot write the in-memory baseline, so
+enforcement (shared file store or a strict pre_tool gate) is deferred.
+
+## Consequences vs. revision 1
+
+- The deterministic session-id / diff hash (Q4) becomes meaningless
+  without sessions and is dropped, with author sanction.
+- `ALETHEIA_MAX_SESSIONS` disappears; baselines live until process exit
+  or remove/rollback, bounded by what the conversation records.
+- The web URL is constant; `open_review`/`get_review_status` are
+  replaced by the baseline operations + live `get_change_status`.
