@@ -111,3 +111,5 @@ button.danger { color: #b91c1c; border-color: #fca5a5; }
 }
 
 .error { color: #b91c1c; }
+.empty { color: #475569; }
+.pending-edit { font-size: 0.75rem; color: #b45309; align-self: center; }

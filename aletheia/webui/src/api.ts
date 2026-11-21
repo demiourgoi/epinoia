@@ -1,61 +1,57 @@
-export type FileStatus = "pending" | "edited" | "approved" | "rejected";
 export type ChangeKind = "created" | "deleted" | "modified";
 
-export interface FileSummary {
-  index: number;
+export interface FileView {
   path: string;
   kind: ChangeKind;
-  status: FileStatus;
-  reverted: boolean;
+  changed: boolean;
 }
 
-export interface FileReview extends FileSummary {
+export interface ReviewFile extends FileView {
   baseline: string | null;
   current: string | null;
   diff: string;
 }
 
-export interface SessionPayload {
-  session_id: string;
-  status: "pending" | "all_approved" | "all_rejected" | "mixed";
-  files: FileReview[];
+export interface ReviewPayload {
+  url: string;
+  files: ReviewFile[];
 }
 
-export async function fetchSession(sessionId: string): Promise<SessionPayload> {
-  const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
+export type Paths = { paths: string[] };
+
+async function jsonOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error((await response.json()).error ?? `HTTP ${response.status}`);
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `HTTP ${response.status}`);
   }
-  return (await response.json()) as SessionPayload;
+  return (await response.json()) as T;
 }
 
-export async function decideFile(
-  sessionId: string,
-  index: number,
-  action: "approve" | "reject" | "save_edit",
-  content?: string,
-): Promise<SessionPayload> {
-  return postJson(`/api/sessions/${encodeURIComponent(sessionId)}/files/${index}/decision`, {
-    action,
-    content,
-  });
+export function fetchReview(): Promise<ReviewPayload> {
+  return fetch("/api/review").then((r) => jsonOrThrow<ReviewPayload>(r));
 }
 
-export async function decideAll(
-  sessionId: string,
-  action: "approve" | "reject",
-): Promise<SessionPayload> {
-  return postJson(`/api/sessions/${encodeURIComponent(sessionId)}/decision`, { action });
+export function addToBaseline(paths: string[]): Promise<Record<string, unknown>> {
+  return request("/api/baseline/files", "POST", { paths });
 }
 
-async function postJson(url: string, body: object): Promise<SessionPayload> {
+export function removeFromBaseline(paths: string[]): Promise<Record<string, unknown>> {
+  return request("/api/baseline/files", "DELETE", { paths });
+}
+
+export function rollback(paths: string[]): Promise<Record<string, unknown>> {
+  return request("/api/rollback", "POST", { paths });
+}
+
+export function saveContent(path: string, content: string): Promise<Record<string, unknown>> {
+  return request("/api/content", "POST", { path, content });
+}
+
+async function request(url: string, method: string, body: object): Promise<Record<string, unknown>> {
   const response = await fetch(url, {
-    method: "POST",
+    method,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw new Error((await response.json()).error ?? `HTTP ${response.status}`);
-  }
-  return (await response.json()) as SessionPayload;
+  return jsonOrThrow<Record<string, unknown>>(response);
 }

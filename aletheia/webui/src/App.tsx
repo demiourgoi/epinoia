@@ -1,28 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  SessionPayload,
-  decideAll,
-  decideFile,
-  fetchSession,
-  FileReview,
+  ReviewPayload,
+  removeFromBaseline,
+  rollback,
+  saveContent,
+  fetchReview,
 } from "./api";
 import { DiffPane } from "./DiffPane";
 
-function sessionFromUrl(): string {
-  const match = window.location.pathname.match(/^\/s\/(.+)$/);
-  return match ? decodeURIComponent(match[1]) : "";
-}
-
-const statusLabels: Record<string, string> = {
-  pending: "Pending",
-  edited: "Edited",
-  approved: "Approved",
-  rejected: "Rejected (reverted on disk)",
+const kindLabels: Record<string, string> = {
+  created: "Created",
+  deleted: "Deleted",
+  modified: "Modified",
 };
 
 export function App() {
-  const sessionId = sessionFromUrl();
-  const [session, setSession] = useState<SessionPayload | null>(null);
+  const [review, setReview] = useState<ReviewPayload | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(0);
   const [editedDoc, setEditedDoc] = useState<string | null>(null);
@@ -30,85 +23,77 @@ export function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const payload = await fetchSession(sessionId);
-      setSession(payload);
+      const payload = await fetchReview();
+      setReview(payload);
       setError("");
     } catch (cause) {
       setError(String(cause instanceof Error ? cause.message : cause));
     }
-  }, [sessionId]);
+  }, []);
 
   useEffect(() => {
-    if (sessionId) void refresh();
-  }, [sessionId, refresh]);
+    void refresh();
+  }, [refresh]);
 
-  if (!sessionId) {
-    return (
-      <main className="page">
-        <h1>Aletheia</h1>
-        <p>Open the review URL your agent shared (it looks like /s/&lt;session&gt;).</p>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="page">
-        <h1>Aletheia</h1>
-        <p className="error">{error}</p>
-      </main>
-    );
-  }
-
-  if (!session) return <main className="page">Loading…</main>;
-
-  const file: FileReview | undefined = session.files[selected];
-  const decided = session.files.length > 0 && session.files.every((f) => f.status === "approved" || f.status === "rejected");
-
-  const act = (action: "approve" | "reject" | "save_edit", content?: string) => {
-    if (!file || busy) return;
-    setBusy(true);
-    decideFile(sessionId, file.index, action, content)
-      .then(() => {
-        setEditedDoc(null);
-        return refresh();
-      })
-      .catch((cause: Error) => setError(cause.message))
-      .finally(() => setBusy(false));
-  };
-
-  const actAll = (action: "approve" | "reject") => {
+  const act = async (action: () => Promise<Record<string, unknown>>) => {
     if (busy) return;
     setBusy(true);
-    decideAll(sessionId, action)
-      .then(refresh)
-      .catch((cause: Error) => setError(cause.message))
-      .finally(() => setBusy(false));
+    try {
+      await action();
+      setEditedDoc(null);
+      await refresh();
+    } catch (cause) {
+      setError(String(cause instanceof Error ? cause.message : cause));
+    } finally {
+      setBusy(false);
+    }
   };
 
+  const file = review?.files[selected];
+  const allPaths = review ? review.files.map((f) => f.path) : [];
+
   return (
-    <main className="page" data-testid="session">
+    <main className="page">
       <header>
         <h1>Aletheia — review changes</h1>
-        <span className={`status status-${session.status}`}>{session.status}</span>
-        <button disabled={busy} onClick={() => void actAll("approve")}>Approve all</button>
-        <button disabled={busy} className="danger" onClick={() => void actAll("reject")}>
+        <span className="status">
+          {review ? `${review.files.length} file${review.files.length === 1 ? "" : "s"} under review` : "…"}
+        </span>
+        <button disabled={busy} onClick={() => void refresh()}>Refresh</button>
+        <button
+          disabled={busy || allPaths.length === 0}
+          onClick={() => void act(() => removeFromBaseline(allPaths))}
+        >
+          Approve all
+        </button>
+        <button
+          className="danger"
+          disabled={busy || allPaths.length === 0}
+          onClick={() => void act(() => rollback(allPaths))}
+        >
           Reject all
         </button>
       </header>
       <p>
-        Approve keeps the file on disk as shown. Edit the right pane and "Save
-        edit" to tweak it before approving. Reject rolls the file back to its
-        pre-agent content on disk. {""}
-        {decided && "All files have been decided."}
+        Approve adopts the file as it is on disk; Reject restores its
+        pre-agent content on disk. Both end the file's review. The right
+        pane is editable: tweak the proposal and "Save edit" writes your
+        version to the working directory.
       </p>
+      {error && <p className="error">{error}</p>}
+      {review && review.files.length === 0 && (
+        <p className="empty">
+          Nothing is under review. The agent records files into the
+          baseline before editing them — the list here refreshes live.
+        </p>
+      )}
       <div className="layout">
         <nav className="files">
           <ul>
-            {session.files.map((entry, index) => (
+            {(review?.files ?? []).map((entry, index) => (
               <li
-                key={entry.index}
-                className={`${index === selected ? "selected" : ""} s-${entry.status}`}
+                key={entry.path}
+                className={index === selected ? "selected" : ""}
                 onClick={() => {
                   setSelected(index);
                   setEditedDoc(null);
@@ -117,7 +102,10 @@ export function App() {
                 <span className="path" title={entry.path}>
                   {entry.path}
                 </span>
-                <span className="badge">{statusLabels[entry.status] ?? entry.status}</span>
+                <span className="badge">
+                  {kindLabels[entry.kind] ?? entry.kind}
+                  {entry.changed ? "" : " · unchanged"}
+                </span>
               </li>
             ))}
           </ul>
@@ -125,20 +113,21 @@ export function App() {
         {file && (
           <section className="detail">
             <div className="detail-actions">
-              <button disabled={busy} onClick={() => act("approve")}>Approve</button>
-              <button
-                disabled={busy}
-                className="danger"
-                onClick={() => act("reject")}
-              >
+              <button disabled={busy} onClick={() => void act(() => removeFromBaseline([file.path]))}>
+                Approve
+              </button>
+              <button className="danger" disabled={busy} onClick={() => void act(() => rollback([file.path]))}>
                 Reject
               </button>
               <button
                 disabled={busy || editedDoc === null}
-                onClick={() => editedDoc !== null && act("save_edit", editedDoc)}
+                onClick={() =>
+                  editedDoc !== null && void act(() => saveContent(file.path, editedDoc))
+                }
               >
                 Save edit
               </button>
+              {editedDoc !== null && <span className="pending-edit">unsaved edit</span>}
             </div>
             <DiffPane
               path={file.path}
