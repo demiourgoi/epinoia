@@ -46,14 +46,16 @@ def ensure_running(settings: Settings) -> None:
             access_log=False,
         )
         server = uvicorn.Server(config)
-        threading.Thread(target=server.run, name="aletheia-review-web", daemon=True).start()
+        thread = threading.Thread(target=server.run, name="aletheia-review-web", daemon=True)
+        thread.start()
         deadline = time.monotonic() + _START_TIMEOUT_SECS
         while time.monotonic() < deadline:
             if server.started:
                 _server = server
                 return
-            if not server.should_exit and not server.started:
-                time.sleep(0.05)
+            if server.should_exit or not thread.is_alive():
+                break
+            time.sleep(0.05)
         msg = (
             f"Could not start the review web server on {settings.host}:{settings.port}. "
             "If the port is already in use, set ALETHEIA_PORT to a free port and retry."

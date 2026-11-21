@@ -129,3 +129,24 @@ def test_built_gui_is_packaged() -> None:
     assert index.exists(), "run `make webui` and commit src/aletheia_mcp/webui/dist"
     assert (DIST_DIR / "assets").exists()
     assert "aletheia" in index.read_text().lower()
+
+
+def test_decide_all_partial_failure_maps_500(harness: Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    import aletheia_mcp.review.disk as disk_module
+
+    write = disk_module.write_text
+    calls: list[Path] = []
+
+    def failing_write(path: Path, content: str) -> None:
+        calls.append(path)
+        if len(calls) > 1:
+            raise OSError("read-only")
+        write(path, content)
+
+    monkeypatch.setattr(disk_module, "write_text", failing_write)
+    resp = harness.client.post(f"/api/sessions/{harness.session_id}/decision", json={"action": "reject"})
+    assert resp.status_code == 500
+    # Earlier reverts stay applied; the failed file is still pending.
+    session = harness.service.get_status(harness.session_id)
+    statuses = {file["path"]: file["status"] for file in session["files"]}
+    assert set(statuses.values()) == {"pending", "rejected"}
