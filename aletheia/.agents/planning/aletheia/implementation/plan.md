@@ -2,7 +2,7 @@
 
 - [x] Step 1: Project skeleton runnable as `aletheia` on Python 3.14
 - [x] Step 2: Review core — baselines, sessions, diffs, disk effects
-- [ ] Step 3: MCP tools — record_baseline, open_review, get_review_status
+- [x] Step 3: MCP tools — record_baseline, open_review, get_review_status
 - [ ] Step 4: Loopback web server, JSON API, React diff GUI
 - [ ] Step 5: Packaging parity, README, end-to-end verification
 
@@ -135,7 +135,18 @@ with monkeypatch (documented as a shortcut).
 
 ## Step 3 — Implementation notes
 
-_(to be filled on completion)_
+Completed as planned: `review/service.py` adds the ReviewService seam
+(baseline store + session store + JSON serialization for tools and HTTP)
+with a process-wide `get_service()` singleton; the three MCP tools in
+`server/tools/review_tools.py` (`record_baseline`, `open_review`,
+`get_review_status`) delegate to it and return JSON strings, with
+docstrings written as an agent manual. `web/server.py` currently states the
+URL contract only (`session_url`), with `ensure_running` a documented
+no-op stub that Step 4 replaces. Tests exercise the real tools over the
+fastmcp in-memory client against an isolated per-test service (set_service
+fixture): full record → edit → open → decide → poll flow incl. on-disk
+revert, creation markers, missing-baseline and unknown-session errors,
+directory and empty-path validation. Deviation: none.
 
 ## Step 4 — Implementation notes
 
