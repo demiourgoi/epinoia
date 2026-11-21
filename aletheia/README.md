@@ -1,73 +1,90 @@
 # Aletheia
 
 **Aletheia** (ἀλήθεια: unconcealment) is an MCP server that gives terminal
-coding agents (such as Mistral Vibe CLI) the Zed-style **asynchronous change
-review** workflow:
+coding agents (such as Mistral Vibe CLI) the Zed-style **asynchronous
+change review** workflow:
 
-1. **`record_baseline`** — before editing, the agent records the files it
-   will touch. The server snapshots their current content in memory (files
-   that will be created are recorded as such).
-2. The agent **edits the files normally**. The changes are on disk, so
-   linters and tests can verify them at any time.
-3. **`open_review`** — the server computes the diff of every changed file
-   against its baseline, creates an in-memory review session, and returns a
-   URL the agent can show to the user. **The call never blocks.**
-4. The user opens the URL: a local web GUI shows a **side-by-side,
-   syntax-highlighted diff** of each file (Java, Python, TypeScript, …). They
-   can **approve** each file, **edit** the proposed content and then approve,
-   or **reject** it — per file, or the whole set.
-   - **approve** keeps the file as it is on disk;
-   - **save edit** writes the user's modified content to disk;
-   - **reject** rolls the file back to its pre-agent content **on disk
-     immediately** (created files are deleted).
-5. **`get_review_status`** — the agent can poll the session to learn which
-   files were approved, edited, or rejected (and reverted).
+1. The agent calls **`record_baseline(paths)`** *before* editing: the
+   server snapshots the current content of those files (files that will be
+   created are recorded as such). The review web server starts on first
+   use and the tool returns its **constant URL** to show the user.
+2. The agent **edits the files normally**. Changes are on disk, so linters
+   and tests can verify them at any time. The review diff is **live**: it
+   always compares the baseline with the current working directory.
+3. The user opens the URL in a browser: a local web GUI shows a
+   **side-by-side, syntax-highlighted diff** per file (Java, Python,
+   TypeScript, …). They can **approve** a file (adopt the working
+   directory), **edit** the proposed content and then approve, or
+   **reject** it (restore the pre-change content on disk) — per file, or
+   the whole change at once.
+4. Decisions shrink the baseline: **a file is under review only while it
+   has a baseline entry**. After approve or reject the file leaves review;
+   if the agent edits it again in a later round, it records the baseline
+   again — that is also how a new change set is anchored, like Zed's
+   per-turn review.
+5. The agent can poll **`get_change_status()`** at any time — the review
+   never blocks the conversation.
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant A as CLI agent
     participant M as Aletheia MCP (stdio)
-    participant W as Review GUI (loopback HTTP)
-    A->>M: record_baseline(files)
+    participant W as Review GUI (loopback HTTP, free port)
+    A->>M: record_baseline(files) — starts W, returns URL
     A->>A: edits files on disk, runs linters
-    A->>M: open_review(files)
-    M-->>A: session_id + review URL
-    A->>U: shows the URL
-    U->>W: reviews highlighted diffs
-    U->>W: approve / edit+save / reject (per file or all)
-    W->>W: rejected changes reverted on disk
-    A->>M: get_review_status(session_id)
-    M-->>A: decisions; rejected files are back to baseline
+    A->>U: shows the constant URL
+    U->>W: reviews live highlighted diffs
+    U->>W: approve (adopt) / edit+save / reject (rollback)
+    W->>W: rejected files restored on disk, out of review
+    A->>M: get_change_status()
+    M-->>A: live drift; decided files gone from the baseline
 ```
 
 ## Tool protocol (for agents)
 
 ```
-record_baseline(paths: list[str]) -> str
-open_review(paths: list[str]) -> str
-get_review_status(session_id: str) -> str
+record_baseline(paths: list[str]) -> str       # before editing
+get_change_status() -> str                    # live drift poll
+remove_from_baseline(paths: list[str]) -> str # approve (adopt working dir)
+rollback_to_baseline(paths: list[str]) -> str # reject (restore, end review)
 ```
 
-See the tool docstrings for exact result shapes. Typical loop:
+Typical loop:
 
 ```text
 record_baseline(["src/main.py", "src/new_file.py"])
-(edit src/main.py; create src/new_file.py; run tests)
-open_review(["src/main.py", "src/new_file.py"])
-→ {"session_id": "a1b2c3d4e5f6", "url": "http://127.0.0.1:8417/s/a1b2c3d4e5f6", ...}
-(show the URL to the user, continue working)
-get_review_status("a1b2c3d4e5f6")
+→ {"url": "http://127.0.0.1:53412", "recorded": [...], "marked_for_creation": [...]}
+(edit src/main.py; create src/new_file.py; run tests — show the URL to the user)
+get_change_status()
+→ {"files": [{"path": "...", "kind": "modified", "changed": true}, ...]}
+(when the user approves: e.g. remove_from_baseline(...) or the GUI button)
 ```
 
 Rules:
-- every path opened for review must have a baseline (error message names it);
+- record a file **before** editing it and re-record when a new change
+  round starts after a decision (error messages name the offending path);
 - only UTF-8 text files are reviewable (binary files and directories are
   rejected with a clear error);
-- review sessions are in-memory: `ALETHEIA_MAX_SESSIONS` (default 100) are
-  kept, the oldest first dropped;
-- the session id is the deterministic hash of the diff set — reopening the
-  identical set of changes returns the same session.
+- the URL is constant for the MCP process; the port is **autodetected**
+  (no port configuration), and state is in-memory: it lives with the agent
+  conversation;
+- baseline entries live exactly as long as the file is under review.
+
+## Vibe hook (baseline reminder)
+
+`aletheia setup` installs a `post_tool` hook into `.vibe/hooks.toml`
+(merge-safe, idempotent) that reminds the agent to
+`record_baseline` every path it edits:
+
+```console
+uv run aletheia setup            # project-level (.vibe/)
+uv run aletheia setup --global   # user-level (~/.vibe/)
+```
+
+Best-effort coaching: the hook runs in its own process and cannot inspect
+the server's in-memory baseline; it makes skipping the baseline a visible
+agent mistake rather than a silent one.
 
 ## Run
 
@@ -90,9 +107,10 @@ Client configuration (any MCP host that supports stdio):
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ALETHEIA_PORT` | `8417` | port of the review web GUI (started when the first session opens) |
 | `ALETHEIA_HOST` | `127.0.0.1` | bind host of the review web GUI (loopback only by default) |
-| `ALETHEIA_MAX_SESSIONS` | `100` | in-memory review sessions kept (oldest dropped) |
+
+There is no port setting: the review server binds an OS-assigned free
+port and the URL is returned by `record_baseline`.
 
 ## Development
 
@@ -100,17 +118,14 @@ Client configuration (any MCP host that supports stdio):
 make install   # uv sync (Python 3.14)
 make webui     # build the review GUI (npm + Vite) into the package
 make check     # mypy + ruff
-make test      # pytest
+make test      # pytest (unit + real-server end-to-end)
 ```
 
-The web UI lives in `webui/` (Vite + React + TypeScript, CodeMirror 6 with
-the merge view and `@codemirror/language-data` for syntax highlighting).
-Its built output is committed to `src/aletheia_mcp/webui/dist` so the
-published wheel ships the GUI without requiring Node at install time.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+The web UI lives in `webui/` (Vite + React + TypeScript, CodeMirror 6
+with the merge view and `@codemirror/language-data` for syntax
+highlighting). Its built output is committed to
+`src/aletheia_mcp/webui/dist` so the published wheel ships the GUI
+without requiring Node at install time.
 
 ## Third-party components
 
@@ -119,3 +134,7 @@ The review GUI is built with [React](https://react.dev/) and
 MIT-licensed; the build tool is [Vite](https://vite.dev/). See
 [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) at the repository root
 for the monorepo policy.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
