@@ -6,8 +6,8 @@ import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
+from aletheia_mcp.review import service as service_module
 from aletheia_mcp.review.service import ReviewService, set_service
-from aletheia_mcp.review.sessions import SessionStore
 from aletheia_mcp.server import mcp
 from aletheia_mcp.settings import Settings
 
@@ -15,15 +15,14 @@ from aletheia_mcp.settings import Settings
 @pytest.fixture
 def fresh_service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ReviewService:
     monkeypatch.chdir(tmp_path)
-    from aletheia_mcp.review import service as service_module
-
-    monkeypatch.setattr(service_module.web_server, "ensure_running", lambda _settings: None)
-    service = ReviewService(SessionStore(max_sessions=10), Settings(host="127.0.0.1", port=8417))
+    monkeypatch.setattr(service_module.web_server, "ensure_running", lambda _settings: "http://127.0.0.1:12345")
+    monkeypatch.setattr(service_module.web_server, "current_url", lambda _settings: "http://127.0.0.1:12345")
+    service = ReviewService(Settings(host="127.0.0.1"))
     set_service(service)
     return service
 
 
-def _call_tool(name: str, arguments: dict[str, object]) -> str:
+def _call(name: str, arguments: dict[str, object]) -> str:
     async def run() -> str:
         async with Client(mcp) as client:
             result = await client.call_tool(name, arguments)
@@ -33,55 +32,56 @@ def _call_tool(name: str, arguments: dict[str, object]) -> str:
 
 
 def _call_json(name: str, arguments: dict[str, object]) -> dict[str, object]:
-    data: dict[str, object] = json.loads(_call_tool(name, arguments))
+    data: dict[str, object] = json.loads(_call(name, arguments))
     return data
 
 
-def test_record_then_open_review_flow(fresh_service: ReviewService) -> None:
+def test_full_agent_loop(fresh_service: ReviewService, tmp_path: Path) -> None:
     a = Path("a.py").resolve()
     a.write_text("original\n")
-    record = _call_json("record_baseline", {"paths": ["a.py"]})
+    record = _call_json("record_baseline", {"paths": ["a.py", "new.py"]})
+    assert record["url"] == "http://127.0.0.1:12345"
     assert record["recorded"] == [str(a)]
     a.write_text("edited\n")
+    Path("new.py").write_text("new\n")
 
-    opened = _call_json("open_review", {"paths": ["a.py"]})
-    assert opened["status"] == "pending"
-    assert opened["files_changed"] == 1
-    assert str(a) == opened["files"][0]["path"]  # type: ignore[index]
-    assert opened["url"].startswith("http://127.0.0.1:8417/s/")  # type: ignore[union-attr]
-    session_id = opened["session_id"]
+    status = _call_json("get_change_status", {})
+    assert status["files_in_baseline"] == 2
+    kinds = {file["path"]: file["kind"] for file in status["files"]}
+    assert kinds[str(a)] == "modified"
 
-    fresh_service.decide_file(str(session_id), 0, "reject")
-    status = _call_json("get_review_status", {"session_id": session_id})
-    assert status["status"] == "all_rejected"
-    file0 = status["files"][0]  # type: ignore[index]
-    assert file0["status"] == "rejected" and file0["reverted"] is True
+    approved = _call_json("remove_from_baseline", {"paths": ["a.py"]})
+    assert approved["files_in_baseline"] == 1
+    rejected = _call_json("rollback_to_baseline", {"paths": ["new.py"]})
+    assert rejected["files_in_baseline"] == 0
+    assert not Path("new.py").exists()
+    assert a.read_text() == "edited\n"
+
+    final = _call_json("get_change_status", {})
+    assert final["files"] == []
+
+
+def test_rejected_file_restores_content(fresh_service: ReviewService, tmp_path: Path) -> None:
+    a = Path("a.py").resolve()
+    a.write_text("original\n")
+    _call_json("record_baseline", {"paths": ["a.py"]})
+    a.write_text("wrong edit\n")
+    _call_json("rollback_to_baseline", {"paths": ["a.py"]})
     assert a.read_text() == "original\n"
 
 
-def test_record_marker_for_creation(fresh_service: ReviewService) -> None:
-    recorded = _call_json("record_baseline", {"paths": ["new.py"]})
-    assert recorded["recorded"] == []
-    assert recorded["marked_for_creation"] == [str(Path("new.py").resolve())]
-
-
-def test_open_review_requires_baseline(fresh_service: ReviewService) -> None:
-    Path("a.py").write_text("x")
+def test_missing_baseline_error(fresh_service: ReviewService, tmp_path: Path) -> None:
+    (tmp_path / "a.py").write_text("x")
     with pytest.raises(ToolError, match="record_baseline"):
-        _call_tool("open_review", {"paths": ["a.py"]})
+        _call("remove_from_baseline", {"paths": ["a.py"]})
 
 
-def test_record_baseline_rejects_directory(fresh_service: ReviewService) -> None:
-    Path("d").mkdir()
+def test_empty_paths_rejected(fresh_service: ReviewService) -> None:
+    with pytest.raises(ToolError, match="at least one file path"):
+        _call("record_baseline", {"paths": []})
+
+
+def test_directory_rejected(fresh_service: ReviewService, tmp_path: Path) -> None:
+    (tmp_path / "d").mkdir()
     with pytest.raises(ToolError, match="directory"):
-        _call_tool("record_baseline", {"paths": ["d"]})
-
-
-def test_open_review_rejects_empty(fresh_service: ReviewService) -> None:
-    with pytest.raises(ToolError):
-        _call_tool("open_review", {"paths": []})
-
-
-def test_unknown_session_status(fresh_service: ReviewService) -> None:
-    with pytest.raises(ToolError, match="Unknown review session"):
-        _call_tool("get_review_status", {"session_id": "does-not-exist"})
+        _call("record_baseline", {"paths": ["d"]})

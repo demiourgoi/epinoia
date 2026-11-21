@@ -1,7 +1,7 @@
 """The Starlette app: review GUI static assets + JSON API (loopback only).
 
-The API acts only on sessions created by the MCP tools; it never touches
-paths outside those sessions. Errors map status codes by domain type.
+The API acts only on paths recorded in the baseline; it never touches
+paths outside it. Errors map status codes by domain type.
 """
 
 from __future__ import annotations
@@ -18,10 +18,9 @@ from starlette.staticfiles import StaticFiles
 
 from aletheia_mcp.errors import (
     AletheiaError,
-    AlreadyDecidedError,
     DiskEffectError,
     InvalidDecisionError,
-    UnknownSessionError,
+    NotInBaselineError,
 )
 
 DIST_DIR = Path(__file__).resolve().parent.parent / "webui" / "dist"
@@ -38,68 +37,94 @@ regardless.</p></body></html>"""
 
 def _error_response(error: AletheiaError, default_status: int) -> Response:
     status = {
-        UnknownSessionError: 404,
-        AlreadyDecidedError: 409,
+        NotInBaselineError: 404,
         InvalidDecisionError: 400,
     }
     code = status.get(type(error), default_status)
     return JSONResponse({"error": str(error)}, status_code=code)
 
 
-async def get_session(request: Request) -> Response:
+async def _body(request: Request) -> dict[str, Any]:
+    raw = await request.body()
+    parsed = _json_or_none(raw) or {}
+    if not isinstance(parsed, dict):
+        msg = "Request body must be a JSON object."
+        raise InvalidDecisionError(msg)
+    return parsed
+
+
+def _json_or_none(raw: bytes) -> object | None:
+    try:
+        return json.loads(raw) if raw else None
+    except json.JSONDecodeError as error:
+        msg = "Request body must be JSON."
+        raise InvalidDecisionError(msg) from error
+
+
+def _paths(body: dict[str, Any]) -> list[str]:
+    paths = body.get("paths")
+    if not isinstance(paths, list) or not paths or not all(isinstance(p, str) for p in paths):
+        msg = "Body must contain a non-empty list of file 'paths' (strings)."
+        raise InvalidDecisionError(msg)
+    return paths
+
+
+async def get_review(request: Request) -> Response:
     from aletheia_mcp.review.service import get_service
 
-    session_id = request.path_params["session_id"]
+    del request
+    return JSONResponse(get_service().review_payload())
+
+
+async def add_to_baseline(request: Request) -> Response:
+    from aletheia_mcp.review.service import get_service
+
     try:
-        return JSONResponse(get_service().session_payload(session_id))
+        result = get_service().record_baseline(_paths(await _body(request)))
+        return JSONResponse(result)
     except AletheiaError as error:
         return _error_response(error, 500)
 
 
-async def decide_file(request: Request) -> Response:
-    session_id = request.path_params["session_id"]
-    index = request.path_params["index"]
-    try:
-        body: dict[str, Any] = json.loads(await request.body() or b"{}")
-    except json.JSONDecodeError:
-        return JSONResponse({"error": "Request body must be JSON."}, status_code=400)
-    action = body.get("action")
-    content = body.get("content")
-    if not isinstance(action, str) or (content is not None and not isinstance(content, str)):
-        return JSONResponse(
-            {"error": "Body must contain a string 'action' and optional string 'content'."}, status_code=400
-        )
+async def remove_from_baseline(request: Request) -> Response:
     from aletheia_mcp.review.service import get_service
 
     try:
-        summary = get_service().decide_file(session_id, int(index), action, content)
-        return JSONResponse(summary)
-    except ValueError:
-        return JSONResponse({"error": f"Invalid file index {index!r}."}, status_code=400)
+        result = get_service().remove_from_baseline(_paths(await _body(request)))
+        return JSONResponse(result)
+    except AletheiaError as error:
+        return _error_response(error, 500)
+
+
+async def rollback(request: Request) -> Response:
+    from aletheia_mcp.review.service import get_service
+
+    try:
+        result = get_service().rollback_to_baseline(_paths(await _body(request)))
+        return JSONResponse(result)
     except AletheiaError as error:
         status = 500 if isinstance(error, DiskEffectError) else None
         return _error_response(error, status or 500)
 
 
-async def decide_all(request: Request) -> Response:
-    session_id = request.path_params["session_id"]
-    try:
-        body: dict[str, Any] = json.loads(await request.body() or b"{}")
-    except json.JSONDecodeError:
-        return JSONResponse({"error": "Request body must be JSON."}, status_code=400)
-    action = body.get("action")
-    if not isinstance(action, str):
-        return JSONResponse({"error": "Body must contain a string 'action'."}, status_code=400)
+async def save_content(request: Request) -> Response:
     from aletheia_mcp.review.service import get_service
 
     try:
-        return JSONResponse(get_service().decide_all(session_id, action))
+        body = await _body(request)
+        path = body.get("path")
+        content = body.get("content")
+        if not isinstance(path, str) or not isinstance(content, str):
+            msg = "Body must contain a 'path' and a 'content', both strings."
+            raise InvalidDecisionError(msg)
+        get_service().write_file_content(path, content)
+        return JSONResponse({"path": path, "written": True})
     except AletheiaError as error:
         status = 500 if isinstance(error, DiskEffectError) else None
         return _error_response(error, status or 500)
 
 
-async def session_page(request: Request) -> Response:
+async def review_page(request: Request) -> Response:
     del request
     index = DIST_DIR / "index.html"
     if index.exists():
@@ -107,17 +132,14 @@ async def session_page(request: Request) -> Response:
     return HTMLResponse(FALLBACK_INDEX)
 
 
-async def root_page(request: Request) -> Response:
-    return await session_page(request)
-
-
 def create_app() -> Starlette:
     routes: list[Any] = [
-        Route("/", root_page),
-        Route("/s/{session_id}", session_page),
-        Route("/api/sessions/{session_id}", get_session, methods=["GET"]),
-        Route("/api/sessions/{session_id}/files/{index}/decision", decide_file, methods=["POST"]),
-        Route("/api/sessions/{session_id}/decision", decide_all, methods=["POST"]),
+        Route("/", review_page),
+        Route("/api/review", get_review, methods=["GET"]),
+        Route("/api/baseline/files", add_to_baseline, methods=["POST"]),
+        Route("/api/baseline/files", remove_from_baseline, methods=["DELETE"]),
+        Route("/api/rollback", rollback, methods=["POST"]),
+        Route("/api/content", save_content, methods=["POST"]),
     ]
     assets = DIST_DIR / "assets"
     if assets.exists():
