@@ -322,6 +322,23 @@ in `webui/dist-sidecar/` and `make webui` copies them back after the
 build; REUSE annotations and THIRD-PARTY-NOTICES updated accordingly
 (reuse lint 234/234).
 
+## Step 11 (rev 2) — Implementation notes
+
+Per the author's follow-up: Vibe loads project-level hooks from the
+trusted project folder (the git root), so `aletheia setup` now installs
+into the `.vibe/` of the git repository root, mirroring the epinoia
+precedent for opencode files (`AGENTS.md`: opencode files go to the
+**git root** because they are discovered from there; a subdirectory
+install would be invisible). `git_root()` resolves
+`git rev-parse --show-toplevel` with a documented fallback to the given
+directory when git is unavailable; the command prints where it installed
+and why. Tests cover root resolution from a nested directory, the
+fallback (git failure), and an end-to-end install from a subdirectory of
+a fresh repository asserting the hook lands at the root and not in the
+subdir. While testing I briefly polluted the epinoia tree's `.vibe/` with
+an untracked hook (a `uv --directory` smoke ran with the wrong CWD); the
+file was removed and the tree verified clean.
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the

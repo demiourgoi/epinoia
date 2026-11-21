@@ -78,9 +78,16 @@ Rules:
 `record_baseline` every path it edits:
 
 ```console
-uv run aletheia setup            # project-level (.vibe/)
+uv run aletheia setup            # project-level: .vibe/ at the git root
 uv run aletheia setup --global   # user-level (~/.vibe/)
 ```
+
+The project-level hook is installed into the `.vibe/` directory of the
+**git repository root** — not the current directory — because Vibe trusts
+and loads project configuration from the repository root (the same
+placement rule epinoia applies to `.opencode/` files: installing inside a
+subdirectory would make them undiscoverable). `setup` resolves the git
+root of the given directory and tells you where it installed.
 
 Best-effort coaching: the hook runs in its own process and cannot inspect
 the server's in-memory baseline; it makes skipping the baseline a visible

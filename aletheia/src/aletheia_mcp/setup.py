@@ -8,6 +8,7 @@ when its unique name is absent.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 HOOK_NAME = "aletheia-baseline"
@@ -56,6 +57,27 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 '''
+
+
+def git_root(directory: Path) -> Path | None:
+    """The git repository root containing `directory`, if any.
+
+    Vibe loads project-level hooks from the trusted project folder, and a
+    session is typically rooted at the repository (the same discovery rule
+    epinoia uses for opencode files: install at the git root, never inside
+    a subdirectory, or the tool will not discover them).
+    """
+    try:
+        output = subprocess.run(  # noqa: S603 - invoking git by name is the point here
+            ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+    except subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError:
+        return None
+    return Path(output.stdout.strip()).resolve()
 
 
 def install_hook(base_dir: Path) -> Path:
