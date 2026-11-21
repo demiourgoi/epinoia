@@ -53,6 +53,7 @@ class ReviewService:
             current = read_text_or_none(path)
             files.append(FileReview(path=path, baseline=baseline.content, current_at_open=current))
         session = self.sessions.create(files)
+        web_server.ensure_running(self.settings)
         url = web_server.session_url(session.session_id, self.settings)
         changed = sum(1 for file in files if has_text_change(file.baseline, file.current_at_open))
         return {

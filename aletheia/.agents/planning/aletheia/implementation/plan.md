@@ -3,7 +3,7 @@
 - [x] Step 1: Project skeleton runnable as `aletheia` on Python 3.14
 - [x] Step 2: Review core — baselines, sessions, diffs, disk effects
 - [x] Step 3: MCP tools — record_baseline, open_review, get_review_status
-- [ ] Step 4: Loopback web server, JSON API, React diff GUI
+- [x] Step 4: Loopback web server, JSON API, React diff GUI
 - [ ] Step 5: Packaging parity, README, end-to-end verification
 
 ## Working agreements
@@ -150,7 +150,26 @@ directory and empty-path validation. Deviation: none.
 
 ## Step 4 — Implementation notes
 
-_(to be filled on completion)_
+Completed as planned: `web/app.py` (Starlette: session payload GET,
+per-file decision POST with content, bulk decision POST; 404/409/400/500
+mapping via a single `_error_response`; `/s/{id}` and `/` serve the SPA
+with a fallback page when no build exists; assets mounted from
+`src/aletheia_mcp/webui/dist`), `web/server.py` (real impl now: uvicorn in
+a daemon thread under `ensure_running`, waiting on `server.started` with a
+10s deadline, `ServerStartError` naming ALETHEIA_PORT), and
+`open_review` now calls `ensure_running` so returned URLs always accept
+connections. GUI in `webui/`: Vite + React 18 + TS;
+side-by-side editable diff via `@codemirror/merge` `MergeView` (pane A
+read-only baseline, pane B editable proposal with per-change highlighting
+and chunk revert controls), syntax highlighting via
+`@codemirror/language-data` (filename-based, lazy: Java, Python, TS, C++,
+Go, Rust, ...), file list with statuses, per-file Approve/Reject/Save edit
+plus global Approve all/Reject all. Deviations: none of substance (the
+language extension comes from `@codemirror/language`'s re-export; MergeView
+is the documented standalone class rather than an extension). Verified by
+a live local HTTP smoke (assets 200, reject reverted the file on disk) and
+15 web-API tests with Starlette's TestClient (ensure_running stubbed in
+unit tests so no ports are bound).
 
 ## Step 5 — Implementation notes
 
