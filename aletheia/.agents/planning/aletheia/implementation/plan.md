@@ -1,6 +1,6 @@
 # Implementation plan: Aletheia
 
-- [ ] Step 1: Project skeleton runnable as `aletheia` on Python 3.14
+- [x] Step 1: Project skeleton runnable as `aletheia` on Python 3.14
 - [ ] Step 2: Review core — baselines, sessions, diffs, disk effects
 - [ ] Step 3: MCP tools — record_baseline, open_review, get_review_status
 - [ ] Step 4: Loopback web server, JSON API, React diff GUI
@@ -105,7 +105,17 @@ Demo: `uv build && uv run --isolated aletheia` from the built wheel works.
 
 ## Step 1 — Implementation notes
 
-_(to be filled on completion)_
+Completed as planned. Skeleton: pyproject (hatchling, `>=3.14,<3.15`, ruff 120
+cols py314, mypy, pytest mirroring harold-mcp with aletheia names), src
+layout `src/aletheia_mcp` with `main.py` (cyclopts app named `aletheia`,
+default command runs the FastMCP stdio server), `settings.py`
+(`ALETHEIA_HOST/PORT/MAX_SESSIONS`), `errors.py` (the design's AletheiaError
+hierarchy), `server/server.py` with a placeholder `ping` tool, Makefile,
+`.python-version` 3.14, README and LICENSE. Deviation: FastMCP resolved to
+4.x (memory transport API changed: `Client(mcp)` instead of
+`MemoryTransport`), and the 3.14 pin is a project requirement comment rather
+than a dependency-cap comment. `make check` and `make test` green; `uv run
+aletheia --help` and the in-memory client demo pass.
 
 ## Step 2 — Implementation notes
 
