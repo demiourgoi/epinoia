@@ -187,6 +187,78 @@ host:port mismatch guard in `ensure_running` (one process serves one
 host:port) emerged from writing the E2E test; documented as a clear error
 naming ALETHEIA_PORT.
 
+**Step 6 (rev 2): Review core rework — baseline-only**
+
+Objective: replace sessions with the baseline-only model per the v2
+design: `BaselineStore.remove`, live-diff `ReviewService`
+(record/remove/rollback/get_change_status/review_payload + save-edit
+writer), `NotInBaselineError`, free-port autodetect with a constant URL
+in `web/server.py`; delete `review/sessions.py`; settings drop
+`ALETHEIA_PORT`/`ALETHEIA_MAX_SESSIONS`.
+Tests: store ops, rollback/restores-then-removes incl. creation markers,
+failure leaves entries, live kinds/changed, service shapes, server
+free-port lifecycle.
+Demo: pytest drives rollback removing a wrong edit from disk.
+
+**Step 7 (rev 2): REST + MCP tools**
+
+Objective: the R4/R5 REST routes and the four mirrored tools with
+agent-manual docstrings; remove session-era routes/tools.
+Tests: TestClient over the new routes incl. 404/400/500 mapping; fastmcp
+in-memory client over the four tools.
+Demo: record → edit → remove (approve) keeps disk; rollback restores.
+
+**Step 8 (rev 2): GUI rework**
+
+Objective: constant-URL review page over the new API: live file list with
+kind/changed badges, per-file Approve (remove) / Reject (rollback) /
+Save edit, global Approve all / Reject all / Refresh, empty-baseline
+state; rebuild `webui/dist`.
+Tests: asset presence as before; live manual smoke via the real server.
+Demo: browser review of a Java + created Python change set.
+
+**Step 9 (rev 2): `aletheia setup` hook installer + docs**
+
+Objective: `aletheia setup` installs the `post_tool` baseline reminder
+hook (merge-safe into `.vibe/hooks.toml`, idempotent, standalone script);
+server/tool descriptions instruct baseline-before-edit; README updated to
+the v2 model (no port env var, constant URL, new tools).
+Tests: installer merge/idempotency/script content; docs updated.
+Demo: `uv run aletheia setup` in a temp project; hook script exercised
+with a synthetic payload.
+
+## Step 6 (rev 2) — Implementation notes
+
+Completed as planned: baseline-only core per the v2 design —
+`BaselineStore` gains `remove` (validating, nothing dropped on failure)
+and sorted `paths`; `sessions.py` deleted; `ReviewService` rewritten
+around live diffs (`record_baseline`/`get_change_status`/
+`remove_from_baseline`/`rollback_to_baseline`/`write_file_content`/
+`review_payload`), rollback restores-then-removes under one operation
+lock (state follows disk; failures keep entries); `NotInBaselineError`;
+settings reduced to `ALETHEIA_HOST` (port autodetected via bind-to-0 in
+`web/server.py`, real port read from the bound socket; the URL is
+constant for the process and returned by every tool result). Unit tests
+cover store ops, all operation semantics incl. creation markers, disk
+failures (single and mid-set), live kinds/changed, save-edit guard, and
+the free-port URL shape. Deviation: none.
+
+## Step 7 (rev 2) — Implementation notes
+
+Completed as planned: REST surface — `GET /api/review` (full payload),
+`POST /api/baseline/files` (add), `DELETE /api/baseline/files`
+(approve), `POST /api/rollback` (reject), `POST /api/content` (GUI
+save-edit), `/` serves the GUI; 404/400/500 mapping via
+`NotInBaselineError`/`InvalidDecisionError`/`DiskEffectError`. MCP tools
+rewritten (`record_baseline`, `get_change_status`,
+`remove_from_baseline`, `rollback_to_baseline`) with agent-manual
+docstrings; the server instructions state the
+baseline-before-edit protocol. Tests: TestClient over every route incl.
+error mapping and approve-all/reject-all composition; fastmcp
+in-memory-client loop incl. drift polling and mirrored decisions.
+Deviation: none (the DELETE route uses `request("DELETE", ...)` in tests:
+this starlette TestClient's `.delete` takes no json kwarg).
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the

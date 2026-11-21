@@ -1,3 +1,3 @@
-from aletheia_mcp.web.server import base_url, ensure_running, session_url
+from aletheia_mcp.web.server import current_url, ensure_running
 
-__all__ = ["base_url", "ensure_running", "session_url"]
+__all__ = ["current_url", "ensure_running"]

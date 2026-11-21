@@ -1,9 +1,11 @@
 """The review web server: a loopback uvicorn thread started on demand.
 
-`ensure_running` is idempotent: the first call starts a daemon thread
-serving the Starlette app and waits until the socket accepts connections,
-so a session URL returned by `open_review` is always live. Bind failures
-surface as ServerStartError naming ALETHEIA_PORT.
+The port is autodetected (uvicorn binds port 0 and the OS assigns a free
+one), so no port configuration exists; the URL is returned by the MCP
+tools instead. `ensure_running` is idempotent: the first call starts a
+daemon thread serving the Starlette app and waits until the socket
+accepts connections, so the URL a tool returns is always live. The URL is
+constant for the process lifetime.
 """
 
 from __future__ import annotations
@@ -21,35 +23,20 @@ _START_TIMEOUT_SECS = 10.0
 
 _lock = threading.Lock()
 _server: uvicorn.Server | None = None
-_serving: tuple[str, int] | None = None
+_serving_host: str | None = None
+_serving_port: int | None = None
 
 
-def base_url(settings: Settings) -> str:
-    return f"http://{settings.host}:{settings.port}"
-
-
-def session_url(session_id: str, settings: Settings) -> str:
-    """URL of the review page for the given session id."""
-    return f"{base_url(settings)}/s/{session_id}"
-
-
-def ensure_running(settings: Settings) -> None:
-    """Start the review server if needed; make the URL contract hold."""
-    global _server, _serving
+def ensure_running(settings: Settings) -> str:
+    """Start the review server if needed; return the constant base URL."""
+    global _server, _serving_host, _serving_port
     with _lock:
         if _server is not None and _server.started:
-            if _serving == (settings.host, settings.port):
-                return
-            host, port = _serving if _serving else ("", 0)
-            msg = (
-                f"The review web server already runs on {host}:{port}; "
-                "one process serves one host:port. Restart with a different ALETHEIA_PORT."
-            )
-            raise ServerStartError(msg)
+            return current_url(settings)
         config = uvicorn.Config(
             create_app(),
             host=settings.host,
-            port=settings.port,
+            port=0,
             log_level="warning",
             access_log=False,
         )
@@ -60,13 +47,26 @@ def ensure_running(settings: Settings) -> None:
         while time.monotonic() < deadline:
             if server.started:
                 _server = server
-                _serving = (settings.host, settings.port)
-                return
+                _serving_host, _serving_port = _socket_address(server)
+                return current_url(settings)
             if server.should_exit or not thread.is_alive():
                 break
             time.sleep(0.05)
         msg = (
-            f"Could not start the review web server on {settings.host}:{settings.port}. "
-            "If the port is already in use, set ALETHEIA_PORT to a free port and retry."
+            f"Could not start the review web server on {settings.host} (autodetected free port). "
+            "Check that the host is bindable and no firewall blocks loopback sockets."
         )
         raise ServerStartError(msg)
+
+
+def current_url(settings: Settings) -> str:
+    """The review URL; before the server starts it is the predicted shape."""
+    host = _serving_host or settings.host
+    port = _serving_port or 0
+    return f"http://{host}:{port}"
+
+
+def _socket_address(server: uvicorn.Server) -> tuple[str, int]:
+    sockets = server.servers[0].sockets if server.servers else []
+    address = sockets[0].getsockname()
+    return str(address[0]), int(address[1])

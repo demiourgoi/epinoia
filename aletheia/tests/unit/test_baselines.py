@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from aletheia_mcp.errors import (
-    UnknownBaselineError,
+    NotInBaselineError,
     UnsupportedFileError,
 )
 from aletheia_mcp.review.baselines import BaselineStore, read_text_or_none
@@ -56,8 +56,45 @@ def test_record_overwrites(tmp_path: Path) -> None:
 
 def test_get_unknown_raises(tmp_path: Path) -> None:
     store = BaselineStore()
-    with pytest.raises(UnknownBaselineError, match="record_baseline"):
+    with pytest.raises(NotInBaselineError, match="record_baseline"):
         store.get(tmp_path / "never.seen")
+
+
+def test_remove_drops_entries(tmp_path: Path) -> None:
+    a = tmp_path / "a.py"
+    a.write_text("x\n")
+    store = BaselineStore()
+    store.record([a])
+    store.remove([a])
+    assert len(store) == 0
+    with pytest.raises(NotInBaselineError):
+        store.get(a)
+
+
+def test_remove_missing_path_rejected(tmp_path: Path) -> None:
+    store = BaselineStore()
+    with pytest.raises(NotInBaselineError, match="not in the baseline"):
+        store.remove([tmp_path / "nope.py"])
+
+
+def test_remove_reports_first_missing(tmp_path: Path) -> None:
+    a = tmp_path / "a.py"
+    a.write_text("x\n")
+    store: BaselineStore = BaselineStore()
+    store.record([a])
+    with pytest.raises(NotInBaselineError, match=r"b\.py"):
+        store.remove([a, tmp_path / "b.py"])
+    assert len(store) == 1  # nothing dropped on failure
+
+
+def test_paths_sorted(tmp_path: Path) -> None:
+    b = tmp_path / "b.py"
+    a = tmp_path / "a.py"
+    b.write_text("b\n")
+    a.write_text("a\n")
+    store = BaselineStore()
+    store.record([b, a])
+    assert store.paths() == [a, b]
 
 
 def test_clear(tmp_path: Path) -> None:

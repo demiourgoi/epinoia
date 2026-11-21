@@ -6,7 +6,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-from aletheia_mcp.errors import UnsupportedFileError
+from aletheia_mcp.errors import NotInBaselineError, UnsupportedFileError
 
 
 @dataclass(frozen=True)
@@ -42,18 +42,19 @@ def read_text_or_none(path: Path) -> str | None:
 
 
 class BaselineStore:
-    """Thread-safe in-memory baseline map keyed by resolved path."""
+    """Thread-safe in-memory baseline map keyed by resolved path.
+
+    An entry exists only while its file is under review: approve (remove)
+    and reject (rollback) operations delete entries; re-recording a path
+    overwrites its entry, which is how a new change round anchors.
+    """
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._baselines: dict[Path, Baseline] = {}
 
     def record(self, paths: list[Path]) -> dict[Path, Baseline]:
-        """Snapshot the given paths (missing ones become creation markers).
-
-        Recording again overwrites the previous baseline, so an agent may
-        enlarge the reviewed set incrementally.
-        """
+        """Snapshot the given paths (missing ones become creation markers)."""
         recorded: dict[Path, Baseline] = {}
         for path in paths:
             recorded[path] = Baseline(read_text_or_none(path))
@@ -67,14 +68,26 @@ class BaselineStore:
             try:
                 return self._baselines[path]
             except KeyError:
-                from aletheia_mcp.errors import UnknownBaselineError
+                raise NotInBaselineError(str(path)) from None
 
-                raise UnknownBaselineError(str(path)) from None
-
-    def clear(self) -> None:
+    def remove(self, paths: list[Path]) -> None:
+        """Drop entries. Every path must be in the baseline."""
         with self._lock:
-            self._baselines.clear()
+            missing = [path for path in paths if path not in self._baselines]
+            if missing:
+                raise NotInBaselineError(str(missing[0]))
+            for path in paths:
+                del self._baselines[path]
+
+    def paths(self) -> list[Path]:
+        """Sorted snapshot of the paths currently under review."""
+        with self._lock:
+            return sorted(self._baselines)
 
     def __len__(self) -> int:
         with self._lock:
             return len(self._baselines)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._baselines.clear()

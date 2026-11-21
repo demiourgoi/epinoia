@@ -13,39 +13,22 @@ class UnsupportedFileError(AletheiaError):
     """A path is not a reviewable UTF-8 text file (directory or non-UTF-8)."""
 
 
-class UnknownBaselineError(AletheiaError):
-    """A path has no recorded baseline: `record_baseline` must be called."""
+class NotInBaselineError(AletheiaError):
+    """A path has no baseline entry: it is not under review."""
 
     def __init__(self, path: str) -> None:
         super().__init__(
-            f"No baseline recorded for {path!r}. Call record_baseline with this path "
-            "before editing it, then call open_review again."
-        )
-
-
-class UnknownSessionError(AletheiaError):
-    """No review session exists with the given id."""
-
-    def __init__(self, session_id: str) -> None:
-        super().__init__(f"Unknown review session {session_id!r}. Use the session_id returned by open_review.")
-
-
-class AlreadyDecidedError(AletheiaError):
-    """The file already got a final approve/reject decision."""
-
-    def __init__(self, path: str, status: str) -> None:
-        super().__init__(
-            f"{path!r} was already {status}. Rejected files were reverted on disk; "
-            "open a new review for further changes."
+            f"{path!r} is not in the baseline. Call record_baseline with this path "
+            "before editing it (or before deciding on it)."
         )
 
 
 class InvalidDecisionError(AletheiaError):
-    """A decision payload is malformed or unknown."""
+    """A request payload is malformed or an operation got no paths."""
 
 
 class DiskEffectError(AletheiaError):
-    """A review decision could not be applied to disk (file, action, cause)."""
+    """An on-disk effect could not be applied (file, action, cause)."""
 
     def __init__(self, path: str, action: str) -> None:
         super().__init__(
@@ -55,4 +38,4 @@ class DiskEffectError(AletheiaError):
 
 
 class ServerStartError(AletheiaError):
-    """The review web server could not be started (for example a busy port)."""
+    """The review web server could not be started."""
