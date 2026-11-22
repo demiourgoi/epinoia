@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from aletheia_mcp.errors import (
+    DiskEffectError,
     EditFailedError,
     OutsideTrustedRootError,
     UnsupportedFileError,
@@ -163,3 +164,38 @@ def test_trusted_root_uses_git_root(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     monkeypatch.setattr(editing_module, "git_root", lambda _dir: tmp_path)
     assert editing_module.trusted_root(Path.cwd()) == tmp_path
+
+
+def test_empty_old_string_rejected(service: ReviewService, tmp_path: Path) -> None:
+    f = tmp_path / "a.txt"
+    f.write_text("hello world\n")
+    with pytest.raises(EditFailedError, match="must not be empty"):
+        service.edit_file("a.txt", "", "X", replace_all=True)
+    assert f.read_text() == "hello world\n"
+    with pytest.raises(EditFailedError, match="must not be empty"):
+        service.edit_file("a.txt", "", "X")
+    assert f.read_text() == "hello world\n"
+    assert len(service.baselines) == 0
+
+
+def test_write_failure_leaves_no_baseline_and_raises_domain_error(
+    service: ReviewService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    f = tmp_path / "a.py"
+    f.write_text("original\n")
+
+    def fail(_path: Path, _content: str) -> None:
+        raise PermissionError("read-only")
+
+    monkeypatch.setattr("aletheia_mcp.review.disk.write_text", fail)
+    with pytest.raises(DiskEffectError, match="edit"):
+        service.edit_file("a.py", "original", "edited")
+    assert len(service.baselines) == 0
+    assert f.read_text() == "original\n"
+
+
+def test_trusted_root_fallback_is_resolved(monkeypatch: pytest.MonkeyPatch) -> None:
+    from aletheia_mcp.review import editing as editing_module
+
+    monkeypatch.setattr(editing_module, "git_root", lambda _dir: None)
+    assert editing_module.trusted_root(Path(".")) == Path.cwd().resolve()

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aletheia_mcp.errors import EditFailedError, OutsideTrustedRootError
+from aletheia_mcp.errors import DiskEffectError, EditFailedError, OutsideTrustedRootError
 from aletheia_mcp.review import disk
 from aletheia_mcp.review.baselines import BaselineStore, read_text_or_none
 from aletheia_mcp.setup import git_root
@@ -27,7 +27,7 @@ def trusted_root(working_dir: Path) -> Path:
     the same criterion the Vibe CLI applies to file tools inside its
     workspace roots.
     """
-    return git_root(working_dir) or working_dir
+    return git_root(working_dir) or working_dir.resolve()
 
 
 def contains(root: Path, path: Path) -> bool:
@@ -71,6 +71,9 @@ def apply_edit(
     if old_string == new_string:
         msg = "new_string must be different from old_string."
         raise EditFailedError(msg)
+    if not old_string:
+        msg = "old_string must not be empty; it would match between every character."
+        raise EditFailedError(msg)
 
     current = read_text_or_none(resolved)  # rejects directories and non-UTF-8
     if current is None:
@@ -96,7 +99,12 @@ def apply_edit(
         store.record([resolved])  # pre-edit content anchors the review round
 
     updated = current.replace(old_string, new_string) if replace_all else current.replace(old_string, new_string, 1)
-    disk.write_text(resolved, updated)
+    try:
+        disk.write_text(resolved, updated)
+    except OSError as error:
+        if baseline_registered:
+            store.remove([resolved])  # the file was never edited: no phantom review entry
+        raise DiskEffectError(str(resolved), "edit") from error
     message = f"Replaced {occurrences if replace_all else 1} occurrence(s) in {resolved!s}."
     return {
         "file": str(resolved),

@@ -440,3 +440,28 @@ Each step's commit got a ponytail review (see
 `../summary-review-rev1.md`). All step reviews shipped on round 1 except
 Step 4 (round 2), and the final review shipped on round 1, staying within
 the 3-round cap.
+
+### Step 13 — post-push review round 4 attendance (PR)
+
+The author's ponytail round 4 on the PR head found three issues in
+`review/editing.py`; all three fixed and regression-tested:
+
+1. *(must fix)* An **empty `old_string` with `replace_all=true`**
+   matched between every character, turning the file into confetti
+   while reporting success. Now rejected with an `EditFailedError`
+   ("old_string must not be empty"), matching the built-in edit tool's
+   validation; the file and baseline stay untouched
+   (`test_empty_old_string_rejected`).
+2. *(should fix)* A **failed atomic write** surfaced as a raw
+   `PermissionError` and left the just-registered baseline entry in
+   place — a phantom file in the user's review. The write is now
+   wrapped `OSError → DiskEffectError(path, "edit")` (matching the
+   rollback/save_edit paths) and the just-added entry is **rolled
+   back** when it was newly registered in this call
+   (`test_write_failure_leaves_no_baseline_and_raises_domain_error`).
+3. *(nice to have)* The `trusted_root` cwd fallback returned its
+   argument unresolved, so a non-canonical working directory would
+   fail `contains()` for every path. The fallback now returns
+   `working_dir.resolve()` (`test_trusted_root_fallback_is_resolved`).
+
+Verification on the fixed head: 97 tests, ruff, mypy green.
