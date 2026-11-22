@@ -339,6 +339,33 @@ subdir. While testing I briefly polluted the epinoia tree's `.vibe/` with
 an untracked hook (a `uv --directory` smoke ran with the wrong CWD); the
 file was removed and the tree verified clean.
 
+**Step 12 (rev 3): Diff UI compaction; language highlighting out of the MVP**
+
+Objective: per the v3 design delta 1 — full-width review page with
+minimal margins, compacted CodeMirror gutters/content and merge pane
+(gap pinned to the specific classes), removal of the
+`@codemirror/language-data` language loading (diff highlighting
+stays), rebuilt and recommitted `webui/dist`, fresh screenshots,docs
+and THIRD-PARTY/REUSE updates for the dropped dependency.
+Tests: package-asset test and the web API suite unchanged; live
+headless re-render to verify the compact layout.
+Demo: new screenshot at the same flow as before.
+
+**Step 13 (rev 3): baseline-aware `edit` MCP tool (opt-in)**
+
+Objective: per the v3 design delta 2 — `review/editing.py` with
+`trusted_root()` computed once at service construction, containment
+(symlinks followed), `apply_edit` with vibe-`EditArgs` schema and
+harness-`edit_file` semantics (unique match / replace_all,
+new != old, atomic write), auto baseline registration in the state
+order trust → validate → baseline → write; the `edit` MCP tool; README
+explains forbidding the built-in edit tool and using this one.
+Tests: schema/semantics, error cases, trusted-root accept/reject
+(subdir ok; .., outside-absolute and symlink-escape rejected),
+no-baseline-side-effect on failure, auto registration incl. new round
+after decisions, fastmcp-client loop.
+Demo: full agent loop editing without ever calling record_baseline.
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the
