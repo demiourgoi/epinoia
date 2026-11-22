@@ -366,6 +366,25 @@ no-baseline-side-effect on failure, auto registration incl. new round
 after decisions, fastmcp-client loop.
 Demo: full agent loop editing without ever calling record_baseline.
 
+## Step 12 (rev 3) — Implementation notes
+
+Completed as planned: the review page is full-width with minimal
+padding (`.page` drops its max-width; header/description/list margins
+reduced), and the CodeMirror compaction pins the specific classes
+(`cm-gutters` padding/min-width, `cm-lineNumbers` gutter elements,
+`cm-content`, `cm-scroller`) per the design. Language-dependent
+highlighting is out of the MVP: `@codemirror/language-data`,
+`@uiw/react-codemirror` (unused since the MergeView rework) and their
+loading logic are gone; the DiffPane builds once on mount (App's
+render-tick key still governs remounts), and the committed bundle
+shrank from 122 generated files to 2 (`index-*.js`, `index-*.css`).
+Sidecars updated to the new facts (dist-sidecar sources + committed
+copies), THIRD-PARTY-NOTICES rewritten for the dropped libraries, and
+fresh headless screenshots captured and verified (compact full-width
+layout, plain text, red/green diff chunks, no side bands); README
+updated. All 74 tests, ruff, mypy, and `uvx reuse lint` green.
+Deviation: none.
+
 ## Reviews per step
 
 Each step's commit was reviewed per the ponytail-review skill before the
