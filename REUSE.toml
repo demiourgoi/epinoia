@@ -101,3 +101,133 @@ SPDX-FileCopyrightText = [
     "Copyright (c) 2026 demiourgoi",
 ]
 SPDX-License-Identifier = "CC-BY-4.0"
+
+# Original content by demiourgoi: the aletheia MCP server, its tests,
+# web UI sources, and its PDD planning and review records.
+[[annotations]]
+path = [
+    "aletheia/LICENSE",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v2-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v2-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v2.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design.md",
+    "aletheia/.agents/planning/aletheia/idea-honing.md",
+    "aletheia/.agents/planning/aletheia/implementation/plan.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-1-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-1-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-2-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-2-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-3-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-4-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-4-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-5-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-6-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-6-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-7-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-8-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-9-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-12-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-13-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/implementation/step-13-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/research/fastmcp-and-packaging.md",
+    "aletheia/.agents/planning/aletheia/research/web-diff-editor-options.md",
+    "aletheia/.agents/planning/aletheia/research/zed-review-model.md",
+    "aletheia/.agents/planning/aletheia/rough-idea.md",
+    "aletheia/.agents/planning/aletheia/summary-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/summary-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v3.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v3-review-rev1.md",
+    "aletheia/.agents/planning/aletheia/design/detailed-design-v3-review-rev2.md",
+    "aletheia/.agents/planning/aletheia/summary.md",
+    "aletheia/.gitignore",
+    "aletheia/.python-version",
+    "aletheia/CONTRIBUTING.md",
+    "aletheia/Makefile",
+    "aletheia/README.md",
+    "aletheia/pyproject.toml",
+    "aletheia/src/aletheia_mcp/__init__.py",
+    "aletheia/src/aletheia_mcp/errors.py",
+    "aletheia/src/aletheia_mcp/main.py",
+    "aletheia/src/aletheia_mcp/review/__init__.py",
+    "aletheia/src/aletheia_mcp/review/baselines.py",
+    "aletheia/src/aletheia_mcp/review/diffs.py",
+    "aletheia/src/aletheia_mcp/review/disk.py",
+    "aletheia/src/aletheia_mcp/review/editing.py",
+    "aletheia/src/aletheia_mcp/review/service.py",
+    "aletheia/src/aletheia_mcp/server/__init__.py",
+    "aletheia/src/aletheia_mcp/server/server.py",
+    "aletheia/src/aletheia_mcp/server/tools/__init__.py",
+    "aletheia/src/aletheia_mcp/server/tools/review_tools.py",
+    "aletheia/src/aletheia_mcp/server/tools/system.py",
+    "aletheia/src/aletheia_mcp/settings.py",
+    "aletheia/src/aletheia_mcp/setup.py",
+    "aletheia/src/aletheia_mcp/web/__init__.py",
+    "aletheia/src/aletheia_mcp/web/app.py",
+    "aletheia/src/aletheia_mcp/web/server.py",
+    "aletheia/tests/__init__.py",
+    "aletheia/tests/conftest.py",
+    "aletheia/tests/integration/test_e2e.py",
+    "aletheia/tests/unit/__init__.py",
+    "aletheia/tests/unit/test_baselines.py",
+    "aletheia/tests/unit/test_diffs.py",
+    "aletheia/tests/unit/test_editing.py",
+    "aletheia/tests/unit/test_disk.py",
+    "aletheia/tests/unit/test_main.py",
+    "aletheia/tests/unit/test_review_tools.py",
+    "aletheia/tests/unit/test_service.py",
+    "aletheia/tests/unit/test_settings.py",
+    "aletheia/tests/unit/test_setup.py",
+    "aletheia/tests/unit/test_web_api.py",
+    "aletheia/uv.lock",
+    "aletheia/webui/index.html",
+    "aletheia/webui/package-lock.json",
+    "aletheia/webui/package.json",
+    "aletheia/webui/src/App.tsx",
+    "aletheia/webui/src/DiffPane.tsx",
+    "aletheia/webui/src/api.ts",
+    "aletheia/webui/src/main.tsx",
+    "aletheia/webui/src/styles.css",
+    "aletheia/webui/tsconfig.json",
+    "aletheia/webui/vite.config.ts"
+]
+SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"
+
+# Generated Vite build output of the Aletheia web UI, committed so the
+# published wheel ships the GUI. The chunks embed minified code from the
+# MIT-licensed libraries recorded in THIRD-PARTY-NOTICES.md; the LICENSE
+# sidecar next to them preserves the upstream notices and ships in the
+# wheel. Human-readable details: webui/dist/assets/README.md.
+[[annotations]]
+path = "aletheia/src/aletheia_mcp/webui/dist/**"
+SPDX-FileCopyrightText = [
+    "Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others",
+    "Copyright (c) Facebook, Inc. and its affiliates.",
+]
+SPDX-License-Identifier = "MIT"
+
+# Source copies of the web UI build-output sidecars (webui/dist/LICENSE and
+# webui/dist/assets/README.md): `make webui` regenerates them into the
+# committed build output, so they carry the same bundled-library notices.
+[[annotations]]
+path = [
+    "aletheia/webui/dist-sidecar/LICENSE",
+    "aletheia/webui/dist-sidecar/assets/README.md",
+]
+SPDX-FileCopyrightText = [
+    "Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others",
+    "Copyright (c) Facebook, Inc. and its affiliates.",
+]
+SPDX-License-Identifier = "MIT"
+
+# Screenshots of the review GUI (original demiourgoi content; the depicted
+# code is a small demo snippet also original to this project).
+[[annotations]]
+path = [
+    "aletheia/docs/screenshots/review-diff-java.png",
+    "aletheia/docs/screenshots/review-diff-python.png",
+]
+SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"
