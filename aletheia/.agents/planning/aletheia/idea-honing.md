@@ -207,3 +207,56 @@ enforcement (shared file store or a strict pre_tool gate) is deferred.
   or remove/rollback, bounded by what the conversation records.
 - The web URL is constant; `open_review`/`get_review_status` are
   replaced by the baseline operations + live `get_change_status`.
+
+---
+
+# Revision 3 — manual testing feedback from the author
+
+## Q16: Diff UI margins, and language-dependent syntax highlighting?
+
+**Author feedback:** the diff UI has very wide margins (wasted space), and
+in practice the language-dependent highlighting does not show up.
+
+**Chosen answers:**
+1. **Margins minimal:** the page uses the full window width, paddings are
+   reduced, and the CodeMirror gutters/content are compacted. Diffs are
+   the product; whitespace is overhead.
+2. **Language-dependent highlighting is dropped from this MVP.** Per the
+   author: keeping both diff and language highlighting "in a simple way"
+   is not working in practice, so the diff highlighting (red/green
+   chunks with revert controls) stays and language grammar loading goes.
+   This shrinks the committed bundle dramatically (no more per-language
+   chunks) and removes the `@codemirror/language-data` dependency;
+   language-annotated merging stays documented as a future option
+   (Tree-sitter or Lezer attach at the merge-panes' extensions).
+
+## Q17: Agents ignore the baseline request, even with the hook. Fix?
+
+**Author decision:** instead of perfecting the hook, add our own edit
+tool. An additional **MCP tool `edit`** performs the exact-string edit
+and registers the baseline automatically, so the review cannot be skipped
+by accident. The hook-based flow stays for users who prefer the built-in
+edit tool.
+
+**Requirements agreed:**
+- same input schema as the Vibe built-in edit tool (`file_path`,
+  `old_string`, `new_string`, `replace_all` default false) — see
+  `vibe/core/tools/builtins/edit.py` — so agents transfer habits and
+  prompts 1:1;
+- same edit semantics as the pydantic AI harness `FileSystem.edit_file`
+  and the vibe tool: exact unique match (error with count on 0 or >1
+  matches unless replace_all), `new != old`, atomic write, clear
+  agent-correctable errors;
+- **trusted filesystem root check with the vibe edit tool's criteria**:
+  the resolved path (absolute or CWD-relative, `~` expanded, symlinks
+  and `..` followed) must stay inside the trusted root — the git
+  repository root of the working directory, falling back to it, matching
+  how Vibe authorizes file-tool paths inside its workspace roots —
+  otherwise the call is rejected with a clear error naming the root;
+- automatic baseline: an edited file not yet in the baseline is
+  registered from its pre-edit content as part of the same call (a file
+  whose review already ended and is edited again starts a new round the
+  same way);
+- opt-in: users choose it instead of the built-in edit tool; the README
+  explains how to configure Vibe to forbid the built-in edit tool and
+  rely on this one.
