@@ -39,5 +39,13 @@ class DiskEffectError(AletheiaError):
         )
 
 
+class OutsideTrustedRootError(AletheiaError):
+    """A resolved path lies outside the trusted project root."""
+
+
+class EditFailedError(AletheiaError):
+    """An edit could not be applied (agent-correctable: bad input)."""
+
+
 class ServerStartError(AletheiaError):
     """The review web server could not be started."""

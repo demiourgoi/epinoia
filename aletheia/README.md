@@ -50,7 +50,35 @@ record_baseline(paths: list[str]) -> str       # before editing
 get_change_status() -> str                    # live drift poll
 remove_from_baseline(paths: list[str]) -> str # approve (adopt working dir)
 rollback_to_baseline(paths: list[str]) -> str # reject (restore, end review)
+edit(file_path, old_string, new_string, replace_all=False) -> str  # opt-in
 ```
+
+### Opt-in `edit` tool (recommended)
+
+In practice agents tend to skip `record_baseline` even with the hook.
+The optional **`edit`** tool is a drop-in replacement for the built-in
+edit tool: same schema *and* semantics as Vibe's built-in edit
+(`file_path` absolute, exact `old_string` → `new_string` replacement,
+unique match unless `replace_all`, `new_string` must differ), plus:
+
+- **automatic baseline**: the first edit of a file records its pre-edit
+  content as the review baseline (never re-anchored; repeated edits stay
+  in the same round; no baseline side effects when an edit fails);
+- **trusted-root confinement**: `file_path` (after resolving symlinks)
+  must stay inside the trusted root — the git repository root of the
+  working directory at server start (falling back to it) — matching the
+  Vibe CLI filesystem-safety criteria;
+- the reply also carries the review `url` to show the user.
+
+```text
+edit(file_path="/repo/src/main.py", old_string="x = 1", new_string="x = 2")
+→ {"file": "...", "message": "edited", "baseline_registered": true,
+   "old_string": "x = 1", "new_string": "x = 2", "url": "http://127.0.0.1:53412/review"}
+```
+
+Both flows coexist: keep the built-in edit tool plus the hook reminder,
+or forbid the built-in edit tool so the agent can only edit through
+Aletheia's baseline-aware one.
 
 Typical loop:
 
@@ -94,6 +122,44 @@ root of the given directory and tells you where it installed.
 Best-effort coaching: the hook runs in its own process and cannot inspect
 the server's in-memory baseline; it makes skipping the baseline a visible
 agent mistake rather than a silent one.
+
+## Replacing the built-in edit tool (Mistral Vibe)
+
+To make agents edit *only* through the baseline-aware `edit` tool, forbid
+the built-in one in your Vibe configuration (project `./.vibe/config.toml`
+at the git root, or user `~/.vibe/config.toml`; per the
+[Vibe configuration reference](https://docs.mistral.ai/vibe/code/cli/configuration-reference)):
+
+```toml
+disabled_tools = ["edit"]
+# or, equivalently:
+[tools.edit]
+permission = "never"
+```
+
+The same keys work in a custom agent file (`.vibe/agents/<name>.toml`),
+so you can scope the restriction to a single agent. Add Aletheia to the
+same `config.toml` if you have not yet (see the
+[MCP servers docs](https://docs.mistral.ai/vibe/code/cli/mcp-servers)):
+
+```toml
+[[mcp_servers]]
+name = "aletheia"
+transport = "stdio"
+command = "uvx"
+args = ["--from", "aletheia", "aletheia"]
+
+# then, to force edits through it:
+disabled_tools = ["edit"]
+```
+
+Vibe exposes MCP tools prefixed with the server name — ours appears as
+`aletheia_edit` — so `disabled_tools = ["edit"]` forbids only the
+built-in edit tool and leaves Aletheia's untouched. With the built-in
+tool gone, editing through `aletheia_edit` registers the baseline
+automatically so nothing can be skipped; keep `aletheia setup` for the
+reminder hook if you want belt and braces for the other ways agents can
+still change files (`write_file`, shell commands).
 
 ## Run
 

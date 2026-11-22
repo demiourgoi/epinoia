@@ -84,3 +84,41 @@ def test_directory_rejected(fresh_service: ReviewService, tmp_path: Path) -> Non
     (tmp_path / "d").mkdir()
     with pytest.raises(ToolError, match="directory"):
         _call("record_baseline", {"paths": ["d"]})
+
+
+def test_edit_tool_full_agent_loop_without_record_baseline(fresh_service: ReviewService, tmp_path: Path) -> None:
+    a = Path("doc.md").resolve()
+    a.write_text("one\ntwo\n")
+
+    edited = _call_json(
+        "edit",
+        {"file_path": str(a), "old_string": "one", "new_string": "ONE"},
+    )
+    assert edited["baseline_registered"] is True
+    assert edited["file"] == str(a)
+    assert edited["url"] == "http://127.0.0.1:12345"
+    assert a.read_text() == "ONE\ntwo\n"
+
+    again = _call_json(
+        "edit",
+        {"file_path": str(a), "old_string": "two", "new_string": "TWO"},
+    )
+    assert again["baseline_registered"] is False
+
+    status = _call_json("get_change_status", {})
+    assert status["files_in_baseline"] == 1
+    file = status["files"][0]
+    assert file["path"] == str(a)
+    assert file["kind"] == "modified"
+    assert file["changed"] is True
+
+    rejected = _call_json("rollback_to_baseline", {"paths": [str(a)]})
+    assert rejected["files_in_baseline"] == 0
+    assert a.read_text() == "one\ntwo\n"
+
+
+def test_edit_tool_ambiguous_match_is_tool_error(fresh_service: ReviewService, tmp_path: Path) -> None:
+    a = Path("dup.py").resolve()
+    a.write_text("a\na\n")
+    with pytest.raises(ToolError):
+        _call("edit", {"file_path": str(a), "old_string": "a", "new_string": "b"})

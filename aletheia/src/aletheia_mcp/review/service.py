@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from aletheia_mcp.errors import DiskEffectError, InvalidDecisionError
-from aletheia_mcp.review import disk
+from aletheia_mcp.review import disk, editing
 from aletheia_mcp.review.baselines import BaselineStore, read_text_or_none
 from aletheia_mcp.review.diffs import has_text_change, unified_diff
 from aletheia_mcp.settings import Settings
@@ -27,9 +27,13 @@ class ReviewService:
         """The review URL; starts the loopback server on first use."""
         return web_server.ensure_running(self.settings)
 
-    def __init__(self, settings: Settings, store: BaselineStore | None = None) -> None:
+    def __init__(
+        self, settings: Settings, store: BaselineStore | None = None, trusted_root: Path | None = None
+    ) -> None:
         self.settings = settings
         self.baselines = store or BaselineStore()
+        # The trusted root is immutable for the process (one git lookup).
+        self.trusted_root = trusted_root or editing.trusted_root(Path.cwd())
         self._lock = threading.Lock()
 
     def record_baseline(self, paths: list[str]) -> dict[str, Any]:
@@ -108,6 +112,19 @@ class ReviewService:
             disk.write_text(resolved[0], content)
         except OSError as error:
             raise DiskEffectError(str(resolved[0]), "save_edit") from error
+
+    def edit_file(self, file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict[str, Any]:
+        """Baseline-aware exact-string edit (the `edit` MCP tool)."""
+        result = editing.apply_edit(
+            root=self.trusted_root,
+            store=self.baselines,
+            file_path=file_path,
+            old_string=old_string,
+            new_string=new_string,
+            replace_all=replace_all,
+        )
+        result["url"] = self._url()
+        return result
 
     def review_payload(self) -> dict[str, Any]:
         """Full live review payload for the web GUI (contents and diffs)."""

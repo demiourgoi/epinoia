@@ -64,3 +64,24 @@ def rollback_to_baseline(paths: list[str]) -> str:
     afterwards must be re-registered with record_baseline.
     """
     return json.dumps(get_service().rollback_to_baseline(paths))
+
+
+@mcp.tool
+def edit(file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> str:
+    """Edit a file with an exact string replacement, registering the review
+    baseline automatically.
+
+    Same schema and semantics as your built-in edit tool: file_path
+    (absolute or project-relative), old_string must match exactly once
+    (more context makes it unique) unless replace_all=true, new_string
+    differs from old_string. Additionally: the pre-edit content of the
+    file is recorded in the review baseline on its first edit through
+    this tool, so every change stays reviewable in the Aletheia web UI
+    (record_baseline happens in the same call; you never skip it by
+    accident). Only files inside the trusted project root can be edited;
+    each result includes the review URL to share with the user.
+
+    Returns JSON {"file", "message", "old_string", "new_string",
+    "baseline_registered", "url"}.
+    """
+    return json.dumps(get_service().edit_file(file_path, old_string, new_string, replace_all))
