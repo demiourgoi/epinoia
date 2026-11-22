@@ -205,8 +205,11 @@ without requiring Node at install time.
 
 ## Screenshots
 
-Full-width review page with the compact side-by-side diff (red/green
-changed chunks; language-dependent highlighting is out of the MVP):
+Full-width review page, dark + orange theme (palette from Mistral's
+own docs assets: `#131313` background, `#ef9743` orange accents,
+the `#ffaf00 → #e10500` brand gradient on the title), with the
+compact side-by-side diff (red/green changed chunks down-tuned for
+dark; language-dependent highlighting is out of the MVP):
 
 | Java file under review | Python file under review |
 | --- | --- |
@@ -215,8 +218,7 @@ changed chunks; language-dependent highlighting is out of the MVP):
 ## Third-party components
 
 The review GUI is built with [React](https://react.dev/) and
-[CodeMirror 6](https://codemirror.net/) (merge view + language data), both
-MIT-licensed; the build tool is [Vite](https://vite.dev/). See
+[CodeMirror 6](https://codemirror.net/) (merge view), both MIT-licensed; the build tool is [Vite](https://vite.dev/). See
 [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) at the repository root
 for the monorepo policy.
 

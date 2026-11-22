@@ -465,3 +465,22 @@ The author's ponytail round 4 on the PR head found three issues in
    `working_dir.resolve()` (`test_trusted_root_fallback_is_resolved`).
 
 Verification on the fixed head: 97 tests, ruff, mypy green.
+
+### Review GUI theme (author request, post round 4)
+
+The author asked for a cool dark + orange theme like the Mistral
+docs/CLI and pointed at
+`mistral-common@6d8c10a/docs/assets` as the palette source. The
+palette was taken verbatim from `extra.css` / `logo-dark.svg`
+(background `#131313`, primary orange `#ef9743` with hover `#f1a75f`
+and active `#ed8727`, brand gradient `#ffaf00 → #ff8205 → #fa500f →
+#e10500`) and applied in `webui/src/styles.css` only — layout and the
+pinned CodeMirror compaction classes are untouched. The diff keeps
+red deletions / green insertions, down-tuned for dark (`#3a1712` /
+`#17321f`); the title carries the brand gradient via
+`background-clip: text`; the status pill, selected-file marker and
+button hovers pick up the orange. Previewed to the author via PR
+comment before merging (side branch, then fast-forwarded) per the
+request; the committed screenshots were re-captured on the dark theme
+with the same headless demo flow (visually re-verified: gradient
+title, dark panels, red/green chunks, no unthemed remnants).
