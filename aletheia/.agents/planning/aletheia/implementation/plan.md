@@ -366,6 +366,41 @@ no-baseline-side-effect on failure, auto registration incl. new round
 after decisions, fastmcp-client loop.
 Demo: full agent loop editing without ever calling record_baseline.
 
+## Step 13 (rev 3) — Implementation notes
+
+Completed as planned: `review/editing.py` with `trusted_root()`
+(git root of the working directory, fallback cwd — computed **once** in
+`ReviewService.__init__` and held immutable for the process, per design
+delta 2), `contains()` containment after symlink resolution, and
+`apply_edit()` in the designed no-side-effects-on-failure order trust →
+validate → baseline → atomic write (schema and semantics matching
+vibe's `EditArgs` / harness `edit_file`: unique match or
+`replace_all=True`, `new_string` != `old_string`, exists + UTF-8,
+project-relative or absolute paths). Baseline registration happens only
+on the first edit of a file per round (`resolved not in store.paths()`),
+never re-anchors, and is skipped entirely when validation fails. The
+`edit` MCP tool (`server/tools/review_tools.py`) wraps
+`ReviewService.edit_file` and returns the review `url` alongside the
+edit result. Tests: `tests/unit/test_editing.py` (17 tests: semantics,
+error cases, subdir allowed, `..`/outside-absolute/symlink escapes
+rejected — the `service` fixture pins `trusted_root=tmp_path`, since
+tmp sits outside any repo the git-root fallback would otherwise widen;
+no-op on failure; new round after decisions re-registers) plus two
+fastmcp in-memory client tests in `test_review_tools.py`: the full agent
+loop editing **without ever calling record_baseline** (rollback restores
+the pre-edit content) and ambiguous-match surfacing as a tool error.
+README: `edit` in the tool protocol with its guarantees, plus the
+"Replacing the built-in edit tool (Mistral Vibe)" section — verified
+against the live Vibe docs: MCP tools are exposed as
+`{server_name}_{tool_name}` (`aletheia_edit`), so `disabled_tools =
+["edit"]` / `[tools.edit] permission = "never"` forbids only the built-in
+tool; `[[mcp_servers]]` stdio entry documented alongside. REUSE.toml
+entries added for the new files. 94 tests, ruff, mypy, wheel build and
+`uvx reuse lint` all green. Review round 1 (step-13-review-rev1.md)
+removed dead code (an unreachable directory branch already rejected
+by `read_text_or_none`) and fixed a docstring mentioning the wrong tool
+name; round 2 ships.
+
 ## Step 12 (rev 3) — Implementation notes
 
 Completed as planned: the review page is full-width with minimal

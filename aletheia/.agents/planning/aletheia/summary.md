@@ -66,3 +66,40 @@ real-server e2e over MCP + HTTP (live payload, save-edit + approve keeps
 the tweak, reject deletes the created file, empty baseline, constant
 URL). ruff + mypy clean; `uv build` wheel ships the rebuilt GUI, and
 `uvx --from <wheel> aletheia --version` works on Python 3.14.
+
+# Revision 3 — manual testing feedback from the author
+
+Three rounds of author feedback after manual use (idea-honing Q16–Q17,
+`design/detailed-design-v3.md`, design shipped on review round 2):
+
+- **Compact diff UI.** The review page is full-width with minimal
+  margins; CodeMirror is compacted by pinning its specific classes
+  (`cm-gutters`, `cm-lineNumbers`, `cm-content`, `cm-scroller`). No
+  global padding hacks.
+- **Language highlighting out of the MVP.** In practice grammar
+  loading did not kick in through the merge view, and dual highlighting
+  is not simple; the diff highlighting stays. `@codemirror/language-data`
+  and `@uiw/react-codemirror` were dropped entirely: the committed
+  bundle went from 122 generated files to 2 (`index-*.js`/`index-*.css`),
+  simplifying provenance and notices. Screenshots regenerated.
+- **Baseline-aware `edit` MCP tool (opt-in).** Agents ignore the
+  record_baseline request even with the hook, so Aletheia now ships
+  its own edit tool with vite-`EditArgs` schema parity (file_path,
+  old_string, new_string, replace_all), harness-`edit_file` semantics
+  (unique match or replace_all, new != old, failure = no side effects),
+  a trusted-root confinement computed once per process (git root of
+  the working directory, fallback cwd, symlinks followed) matching
+  the Vibe CLI filesystem-safety criteria, and automatic baseline
+  registration on the file's first edit of a round. The README
+  documents replacing the built-in edit tool in Vibe
+  (`disabled_tools = ["edit"]` / `[tools.edit] permission = "never"`;
+  MCP tools are exposed as `aletheia_edit`, so the deny-list leaves
+  Aletheia's tool untouched). The hook flow remains for agents that
+  keep the built-in tools.
+
+Verification (revision 3): 94 tests green (17 new editing tests plus
+two fastmcp-client edit-tool tests, including the full agent loop that
+never calls record_baseline), ruff + mypy clean, `uv build` ships the
+rebuilt 2-file GUI, `uvx reuse lint` fully compliant. Step 13 shipped
+on review round 2 (dead directory branch removed, docstring tool-name
+fix).
