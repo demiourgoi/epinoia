@@ -12,11 +12,13 @@ change review** workflow:
    and tests can verify them at any time. The review diff is **live**: it
    always compares the baseline with the current working directory.
 3. The user opens the URL in a browser: a local web GUI shows a
-   **side-by-side, syntax-highlighted diff** per file (Java, Python,
-   TypeScript, …). They can **approve** a file (adopt the working
-   directory), **edit** the proposed content and then approve, or
-   **reject** it (restore the pre-change content on disk) — per file, or
-   the whole change at once.
+   compact **side-by-side diff** per file (red/green changed chunks,
+   minimal margins — the diff is the product). They can **approve** a
+   file (adopt the working directory), **edit** the proposed content and
+   then approve, or **reject** it (restore the pre-change content on
+   disk) — per file, or the whole change at once. Language-dependent
+   syntax highlighting is out of scope for this MVP (diff highlighting
+   covers review needs).
 4. Decisions shrink the baseline: **a file is under review only while it
    has a baseline entry**. After approve or reject the file leaves review;
    if the agent edits it again in a later round, it records the baseline
@@ -131,16 +133,18 @@ make test      # pytest (unit + real-server end-to-end)
 ```
 
 The web UI lives in `webui/` (Vite + React + TypeScript, CodeMirror 6
-with the merge view and `@codemirror/language-data` for syntax
-highlighting). Its built output is committed to
+merge view for the side-by-side diff). Its built output is committed to
 `src/aletheia_mcp/webui/dist` so the published wheel ships the GUI
 without requiring Node at install time.
 
 ## Screenshots
 
+Full-width review page with the compact side-by-side diff (red/green
+changed chunks; language-dependent highlighting is out of the MVP):
+
 | Java file under review | Python file under review |
 | --- | --- |
-| ![Java diff with syntax highlighting and red/green changed chunks](docs/screenshots/review-diff-java.png) | ![Python diff with syntax highlighting](docs/screenshots/review-diff-python.png) |
+| ![Java diff with red/green changed chunks](docs/screenshots/review-diff-java.png) | ![Python diff with red/green changed chunks](docs/screenshots/review-diff-python.png) |
 
 ## Third-party components
 

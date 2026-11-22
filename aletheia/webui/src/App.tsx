@@ -160,7 +160,6 @@ export function App() {
             </div>
             <DiffPane
               key={`${file.path}:${renderTick}`}
-              path={file.path}
               baseline={file.baseline}
               current={draft ?? file.current}
               onEdit={(doc: string) =>

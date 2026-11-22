@@ -8,15 +8,11 @@ permission notices are preserved here as the MIT license requires.
 ---
 
 Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
-(CodeMirror 6 packages @codemirror/*, including merge, language-data and
-legacy-modes, and the Lezer grammar packages @lezer/* —
-https://codemirror.net, https://lezer.codemirror.net)
+(CodeMirror 6 packages @codemirror/merge, @codemirror/state,
+@codemirror/view — https://codemirror.net)
 
 Copyright (c) Facebook, Inc. and its affiliates.
 (React and React DOM — https://react.dev)
-
-@uiw/react-codemirror — https://github.com/uiwjs/react-codemirror —
-MIT (per its package metadata; author: kenny wang <wowohoo@qq.com>)
 
 ---
 

@@ -100,9 +100,15 @@ generated, not copied from any upstream distribution.
 
 | Library | Upstream | Copyright | Status |
 | --- | --- | --- | --- |
-| `@codemirror/*`, `@lezer/*` | https://codemirror.net, https://lezer.codemirror.net | Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others | bundled minified |
+| `@codemirror/merge`, `@codemirror/state`, `@codemirror/view` | https://codemirror.net | Copyright (C) 2018-2022 by Marijn Haverbeke <marijn@haverbeke.berlin> and others | bundled minified |
 | `react`, `react-dom` | https://react.dev | Copyright (c) Facebook, Inc. and its affiliates. | bundled minified |
-| `@uiw/react-codemirror` | https://github.com/uiwjs/react-codemirror | MIT per its package metadata (author: kenny wang <wowohoo@qq.com>; the package ships no LICENSE file) | bundled minified |
+
+Earlier revisions of this entry also bundled `@codemirror/language-data`
+(plus the Lezer grammars it indexed) and `@uiw/react-codemirror`
+(MIT per its package metadata; author: kenny wang <wowohoo@qq.com>; no
+LICENSE file shipped); both were dropped from the MVP build in design
+revision 3 (no language-dependent highlighting), and today's `dist/`
+output contains none of their code.
 
 ### Files in this repository
 
