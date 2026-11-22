@@ -1,12 +1,24 @@
+/* Dark + orange theme: palette from Mistral's docs assets
+   (mistral-common/docs/assets/extra.css and logo-dark.svg) —
+   background #131313, primary orange #ef9743 (hover #f1a75f,
+   active #ed8727), brand gradient #ffaf00 → #e10500. */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: system-ui, sans-serif;
+  --bg: #131313;
+  --panel: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #ededed;
+  --muted: #9a9a9a;
+  --orange: #ef9743;
+  --orange-light: #f1a75f;
+  --orange-dark: #ed8727;
 }
 
 body {
   margin: 0;
-  background: #f6f7f9;
-  color: #1c2430;
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* The diff is the product: full window width, minimal chrome. */
@@ -29,33 +41,39 @@ header {
 header h1 {
   font-size: 1.05rem;
   margin: 0;
+  background: linear-gradient(90deg, #ffaf00, #ff8205, #fa500f, #e10500);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .page > p {
   margin: 0.35rem 0;
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--muted);
 }
 
 .status {
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: #262626;
+  color: var(--orange-light);
   font-size: 0.8rem;
 }
 
 button {
   padding: 0.25rem 0.7rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #3a3a3a;
   border-radius: 5px;
-  background: #fff;
+  background: #212121;
+  color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
 }
 
-button:hover:not(:disabled) { background: #f1f5f9; }
+button:hover:not(:disabled) { background: #2b2b2b; border-color: var(--orange-dark); }
 button:disabled { opacity: 0.5; cursor: default; }
-button.danger { color: #b91c1c; border-color: #fca5a5; }
+button.danger { color: #ff8f80; border-color: #5a2320; }
 
 .layout {
   display: grid;
@@ -67,9 +85,9 @@ button.danger { color: #b91c1c; border-color: #fca5a5; }
 }
 
 .files {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel);
   overflow: auto;
 }
 
@@ -85,12 +103,15 @@ button.danger { color: #b91c1c; border-color: #fca5a5; }
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #222;
   cursor: pointer;
   font-size: 0.8rem;
 }
 
-.files li.selected { background: #eef2ff; }
+.files li.selected {
+  background: #26201a;
+  box-shadow: inset 2px 0 0 var(--orange);
+}
 .files li .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .files li .badge { font-size: 0.7rem; flex-shrink: 0; }
 
@@ -106,34 +127,44 @@ button.danger { color: #b91c1c; border-color: #fca5a5; }
 /* Compact CodeMirror: thin gutters and nearly flush content. */
 .diff,
 .diff .cm-mergeView {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel);
   flex: 1;
   min-height: 60vh;
+  color: var(--text);
 }
 
 .diff .cm-mergeView {
   overflow: auto;
 }
 
-.diff .cm-editor { height: 100%; }
-
+.diff .cm-editor { height: 100%; background: var(--panel); color: var(--text); }
 .diff .cm-gutters {
   padding: 0 1px 0 2px;
   min-width: 0;
-  border-right: 1px solid #f1f5f9;
-  background: #fbfcfe;
+  border-right: 1px solid #222;
+  background: #161616;
+  color: #6e6e6e;
 }
 
 .diff .cm-lineNumbers .cm-gutterElement { padding: 0 2px 0 2px; }
 
 .diff .cm-content {
   padding: 2px 0;
+  caret-color: var(--orange);
 }
 
 .diff .cm-scroller { font-family: ui-monospace, monospace; font-size: 13px; }
 
-.error { color: #b91c1c; }
-.empty { color: #475569; }
-.pending-edit { font-size: 0.75rem; color: #b45309; }
+/* Diff highlighting, dark-appropriate: red deletions, green
+   insertions (unchanged in kind), tuned to sit on #1a1a1a. */
+.diff .cm-deletedChunk { background: #3a1712; }
+.diff .cm-deletedChunk .cm-deletedText { background: #57201a; }
+.diff .cm-changedLine.cm-deletedLine { background: #3a1712; }
+.diff .cm-changedLine.cm-insertedLine { background: #17321f; }
+.diff .cm-changedLineGutter { background: #221f1a; }
+
+.error { color: #ff8f80; }
+.empty { color: var(--muted); }
+.pending-edit { font-size: 0.75rem; color: var(--orange-light); }
