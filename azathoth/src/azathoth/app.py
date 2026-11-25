@@ -7,6 +7,7 @@ bridge, and the answer is returned in the OpenAI response format.
 
 import ipaddress
 import json
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -16,13 +17,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.exceptions import HTTPException
 
-from azathoth.acp_client import AcpBridge, AcpBridgeError, CompletionResult
+from azathoth.acp_client import AcpBridge, AcpBridgeError, PieceEvent
 from azathoth.openai_models import (
     ChatCompletionRequest,
     acp_stop_reason_to_finish_reason,
     build_completion,
-    build_stream_chunks,
+    build_content_chunk,
+    build_finish_chunk,
+    build_role_chunk,
     error_body,
+    new_completion_id,
 )
 from azathoth.settings import Settings
 
@@ -98,23 +102,32 @@ def create_app(bridge: AcpBridge) -> FastAPI:
 
     @app.post("/v1/chat/completions", response_model=None, dependencies=[Depends(_loopback_guard)])
     async def chat_completions(request: ChatCompletionRequest) -> JSONResponse | StreamingResponse:
+        if request.stream:
+            return StreamingResponse(_sse_stream(request, bridge), media_type="text/event-stream")
         result = await bridge.complete(request.model, request.messages, request.max_tokens)
         finish_reason = acp_stop_reason_to_finish_reason(result.stop_reason)
-        if request.stream:
-            return StreamingResponse(
-                _sse_stream(request, result, finish_reason),
-                media_type="text/event-stream",
-            )
         return JSONResponse(build_completion(request, "".join(result.text_pieces), finish_reason))
 
     return app
 
 
-async def _sse_stream(
-    request: ChatCompletionRequest, result: CompletionResult, finish_reason: str
-) -> AsyncIterator[bytes]:
-    for chunk in build_stream_chunks(request, result.text_pieces, finish_reason):
-        yield f"data: {json.dumps(chunk)}\n\n".encode()
+async def _sse_stream(request: ChatCompletionRequest, bridge: AcpBridge) -> AsyncIterator[bytes]:
+    completion_id = new_completion_id()
+    created = int(time.time())
+    yield f"data: {json.dumps(build_role_chunk(request, completion_id, created))}\n\n".encode()
+    stop_reason = "end_turn"
+    try:
+        async for event in bridge.stream(request.model, request.messages, request.max_tokens):
+            if isinstance(event, PieceEvent):
+                if event.text:
+                    chunk = build_content_chunk(request, completion_id, created, event.text)
+                    yield f"data: {json.dumps(chunk)}\n\n".encode()
+            else:
+                stop_reason = event.stop_reason
+    except AcpBridgeError:
+        stop_reason = "cancelled"
+    finish = build_finish_chunk(request, completion_id, created, acp_stop_reason_to_finish_reason(stop_reason))
+    yield f"data: {json.dumps(finish)}\n\n".encode()
     yield b"data: [DONE]\n\n"
 
 

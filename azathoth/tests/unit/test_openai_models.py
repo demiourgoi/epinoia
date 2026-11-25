@@ -1,12 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from azathoth.openai_models import (
-    build_completion,
-    build_stream_chunks,
-    error_body,
-    flatten_messages,
-)
+from azathoth.openai_models import build_completion, error_body, flatten_messages
 
 
 def _request(**overrides):
@@ -111,29 +106,32 @@ def test_build_completion_shape() -> None:
     assert body["usage"] == {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
 
-def test_build_stream_chunks_shape() -> None:
-    from azathoth.openai_models import ChatCompletionRequest
+def test_stream_chunk_builders_shape() -> None:
+    from azathoth.openai_models import (
+        ChatCompletionRequest,
+        build_content_chunk,
+        build_finish_chunk,
+        build_role_chunk,
+        new_completion_id,
+    )
 
     req = ChatCompletionRequest.model_validate(_request())
-    chunks = build_stream_chunks(req, ["hi ", "there"], "stop")
-    assert chunks[0]["object"] == "chat.completion.chunk"
-    assert all(c["id"] == chunks[0]["id"] for c in chunks)
-    assert chunks[0]["choices"][0]["delta"] == {"role": "assistant"}
-    assert chunks[1]["choices"][0]["delta"] == {"content": "hi "}
-    assert chunks[2]["choices"][0]["delta"] == {"content": "there"}
-    assert chunks[3]["choices"][0]["finish_reason"] == "stop"
+    completion_id = new_completion_id()
+    created = 100
+    role = build_role_chunk(req, completion_id, created)
+    first = build_content_chunk(req, completion_id, created, "hi ")
+    finish = build_finish_chunk(req, completion_id, created, "stop")
 
-
-def test_build_stream_chunks_skips_empty_pieces() -> None:
-    from azathoth.openai_models import ChatCompletionRequest
-
-    req = ChatCompletionRequest.model_validate(_request())
-    chunks = build_stream_chunks(req, ["", "there"], "stop")
-    assert [c["choices"][0]["delta"] for c in chunks] == [
-        {"role": "assistant"},
-        {"content": "there"},
-        {},
-    ]
+    for chunk in (role, first, finish):
+        assert chunk["object"] == "chat.completion.chunk"
+        assert chunk["id"] == completion_id
+        assert chunk["created"] == created
+        assert chunk["model"] == "mistral-small"
+    assert role["choices"][0]["delta"] == {"role": "assistant"}
+    assert role["choices"][0]["finish_reason"] is None
+    assert first["choices"][0]["delta"] == {"content": "hi "}
+    assert finish["choices"][0]["delta"] == {}
+    assert finish["choices"][0]["finish_reason"] == "stop"
 
 
 def test_error_body_shape() -> None:

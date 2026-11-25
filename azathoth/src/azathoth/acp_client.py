@@ -13,6 +13,7 @@ enforced from the client side of the protocol:
 import asyncio
 import contextlib
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -100,6 +101,23 @@ class CompletionResult:
 
     text_pieces: list[str] = field(default_factory=list)
     stop_reason: str = "end_turn"
+
+
+@dataclass
+class PieceEvent:
+    """A text fragment streamed by the agent mid-turn."""
+
+    text: str
+
+
+@dataclass
+class StopEvent:
+    """The final stop reason of a streamed turn."""
+
+    stop_reason: str
+
+
+StreamEvent = PieceEvent | StopEvent
 
 
 class ToolsDisabledClient(Client):
@@ -222,6 +240,56 @@ class AcpBridge:
         except TimeoutError as exc:
             await self._after_failure()
             raise AgentTimeoutError("agent turn timed out") from exc
+
+    async def stream(
+        self, model: str, messages: list[ChatMessage], max_tokens: int | None
+    ) -> AsyncIterator[StreamEvent]:
+        """Yield the agent's answer piece by piece, then a StopEvent."""
+        async with self._connect_lock:
+            if self._connection is None or (self._proc is not None and self._proc.returncode is not None):
+                await self._connect()
+            connection = self._connection
+        if connection is None:
+            raise AgentUnavailableError("agent connection is not established")
+        session = await connection.new_session(cwd=str(Path.cwd()), mcp_servers=[])
+        queue = self._client.subscribe(session.session_id)
+        try:
+            await self._apply_config_options(connection, session, model=model, max_tokens=max_tokens)
+            prompt = flatten_messages(messages)
+            prompt_task = asyncio.create_task(
+                asyncio.wait_for(
+                    connection.prompt(session_id=session.session_id, prompt=[TextContentBlock(text=prompt)]),
+                    timeout=self._timeout_secs,
+                )
+            )
+            try:
+                while True:
+                    get_task = asyncio.create_task(queue.get())
+                    done, _pending = await asyncio.wait({prompt_task, get_task}, return_when=asyncio.FIRST_COMPLETED)
+                    if get_task in done:
+                        update = get_task.result()
+                        if isinstance(update, AgentMessageChunk) and isinstance(update.content, TextContentBlock):
+                            yield PieceEvent(text=update.content.text)
+                    if prompt_task in done:
+                        try:
+                            while not queue.empty():
+                                update = queue.get_nowait()
+                                if isinstance(update, AgentMessageChunk) and isinstance(
+                                    update.content, TextContentBlock
+                                ):
+                                    yield PieceEvent(text=update.content.text)
+                        finally:
+                            get_task.cancel()
+                        response = prompt_task.result()
+                        yield StopEvent(stop_reason=response.stop_reason)
+                        return
+            finally:
+                prompt_task.cancel()
+        except TimeoutError as exc:
+            await self._after_failure()
+            raise AgentTimeoutError("agent turn timed out") from exc
+        finally:
+            self._client.unsubscribe(session.session_id)
 
     async def _complete(self, model: str, messages: list[ChatMessage], max_tokens: int | None) -> CompletionResult:
         async with self._connect_lock:

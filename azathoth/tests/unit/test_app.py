@@ -180,3 +180,62 @@ def test_completion_result_dataclass_defaults():
 def test_chat_message_model():
     message = ChatMessage(role="user", content="hi")
     assert message.role == "user"
+
+
+def test_streaming_sse_events(client):
+    with client.stream(
+        "POST",
+        "/v1/chat/completions",
+        json={"model": "mistral-small", "messages": [{"role": "user", "content": "stream me"}], "stream": True},
+    ) as response:
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        body = "".join(chunk.decode() for chunk in response.iter_raw())
+    events = [line[len("data: ") :].strip() for line in body.splitlines() if line.startswith("data: ")]
+    import json as jsonlib
+
+    chunks = [jsonlib.loads(event) for event in events[:-1]]
+    assert events[-1] == "[DONE]"
+    assert len(chunks) == 4
+    assert chunks[0]["choices"][0]["delta"] == {"role": "assistant"}
+    assert chunks[1]["choices"][0]["delta"]["content"] == "hello from mistral-small and "
+    assert chunks[2]["choices"][0]["delta"]["content"] == "echo stream me"
+    assert chunks[3]["choices"][0]["finish_reason"] == "stop"
+    ids = {chunk["id"] for chunk in chunks}
+    assert len(ids) == 1
+    assert next(iter(ids)).startswith("chatcmpl-")
+
+
+def test_streaming_survives_permission_denial(client):
+    with client.stream(
+        "POST",
+        "/v1/chat/completions",
+        json={"model": "mistral-small", "messages": [{"role": "user", "content": "stream PERMISSION"}], "stream": True},
+    ) as response:
+        assert response.status_code == 200
+        body = "".join(chunk.decode() for chunk in response.iter_raw())
+    assert "permission cancelled" in body
+    assert "data: [DONE]" in body
+
+
+def test_streaming_timeout_closes_stream():
+
+    from azathoth.acp_client import AcpBridge
+
+    app = create_app(AcpBridge(FAKE_AGENT, timeout_secs=0.5))
+    with (
+        TestClient(app, raise_server_exceptions=False) as slow_client,
+        slow_client.stream(
+            "POST",
+            "/v1/chat/completions",
+            json={
+                "model": "mistral-small",
+                "messages": [{"role": "user", "content": "stream STALL"}],
+                "stream": True,
+            },
+        ) as response,
+    ):
+        assert response.status_code == 200
+        body = "".join(chunk.decode() for chunk in response.iter_raw())
+    assert "data: [DONE]" in body
+    assert '"finish_reason": "stop"' in body or "cancelled" in body

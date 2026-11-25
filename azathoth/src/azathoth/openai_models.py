@@ -79,7 +79,7 @@ def flatten_messages(messages: list[ChatMessage]) -> str:
     return "\n\n".join(lines)
 
 
-def _completion_id() -> str:
+def new_completion_id() -> str:
     return f"chatcmpl-{uuid.uuid4().hex[:24]}"
 
 
@@ -89,7 +89,7 @@ def build_completion(
     finish_reason: str,
 ) -> dict[str, object]:
     return {
-        "id": _completion_id(),
+        "id": new_completion_id(),
         "object": "chat.completion",
         "created": int(time.time()),
         "model": request.model,
@@ -104,41 +104,37 @@ def build_completion(
     }
 
 
-def build_stream_chunks(
+def build_role_chunk(request: ChatCompletionRequest, completion_id: str, created: int) -> dict[str, object]:
+    return _chunk(request, completion_id, created, delta={"role": "assistant"}, finish_reason=None)
+
+
+def build_content_chunk(
+    request: ChatCompletionRequest, completion_id: str, created: int, piece: str
+) -> dict[str, object]:
+    return _chunk(request, completion_id, created, delta={"content": piece}, finish_reason=None)
+
+
+def build_finish_chunk(
+    request: ChatCompletionRequest, completion_id: str, created: int, finish_reason: str
+) -> dict[str, object]:
+    return _chunk(request, completion_id, created, delta={}, finish_reason=finish_reason)
+
+
+def _chunk(
     request: ChatCompletionRequest,
-    text_pieces: list[str],
-    finish_reason: str,
-) -> list[dict[str, object]]:
-    """Build one chunk per text piece plus role and finish chunks."""
-    completion_id = _completion_id()
-    created = int(time.time())
-    chunks: list[dict[str, object]] = [
-        {
-            "id": completion_id,
-            "object": "chat.completion.chunk",
-            "created": created,
-            "model": request.model,
-            "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}],
-        }
-    ]
-    for piece in text_pieces:
-        if not piece:
-            continue
-        chunks.append({
-            "id": completion_id,
-            "object": "chat.completion.chunk",
-            "created": created,
-            "model": request.model,
-            "choices": [{"index": 0, "delta": {"content": piece}, "finish_reason": None}],
-        })
-    chunks.append({
+    completion_id: str,
+    created: int,
+    *,
+    delta: dict[str, str],
+    finish_reason: str | None,
+) -> dict[str, object]:
+    return {
         "id": completion_id,
         "object": "chat.completion.chunk",
         "created": created,
         "model": request.model,
-        "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}],
-    })
-    return chunks
+        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+    }
 
 
 def acp_stop_reason_to_finish_reason(stop_reason: str) -> str:
