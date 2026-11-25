@@ -7,6 +7,7 @@ Behaviors (triggered by words in the prompt):
 - ``USE_FILE``: tries to write a file through the client, then reports the
   outcome in its reply.
 - ``STALL``: never answers (drives the timeout path).
+- ``FAIL``: crashes the turn server-side (drives the agent-error path).
 - otherwise: replies with ``hello world`` followed by the transcript and the
   model selected for the session.
 
@@ -75,6 +76,8 @@ class FakeAgent(Agent):
     async def prompt(self, session_id: str, prompt: list[TextContentBlock], **kwargs: object) -> PromptResponse:
         text = prompt[0].text if prompt and isinstance(prompt[0], TextContentBlock) else ""
         model = self._selected.get(session_id, "mistral-small")
+        if "FAIL" in text:
+            raise RuntimeError("simulated agent crash")
         if "STALL" in text:
             await asyncio.sleep(30)
             return PromptResponse(stop_reason="end_turn")

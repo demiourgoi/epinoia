@@ -41,6 +41,7 @@ from acp.schema import (
     KillTerminalResponse,
     NewSessionResponse,
     PermissionOption,
+    PromptResponse,
     ReadTextFileResponse,
     ReleaseTerminalResponse,
     RequestPermissionResponse,
@@ -240,6 +241,8 @@ class AcpBridge:
         except TimeoutError as exc:
             await self._after_failure()
             raise AgentTimeoutError("agent turn timed out") from exc
+        except RequestError as exc:
+            raise AcpBridgeError(f"agent turn failed: {exc}") from exc
 
     async def stream(
         self, model: str, messages: list[ChatMessage], max_tokens: int | None
@@ -263,33 +266,40 @@ class AcpBridge:
                 )
             )
             try:
-                while True:
-                    get_task = asyncio.create_task(queue.get())
-                    done, _pending = await asyncio.wait({prompt_task, get_task}, return_when=asyncio.FIRST_COMPLETED)
-                    if get_task in done:
-                        update = get_task.result()
-                        if isinstance(update, AgentMessageChunk) and isinstance(update.content, TextContentBlock):
-                            yield PieceEvent(text=update.content.text)
-                    if prompt_task in done:
-                        try:
-                            while not queue.empty():
-                                update = queue.get_nowait()
-                                if isinstance(update, AgentMessageChunk) and isinstance(
-                                    update.content, TextContentBlock
-                                ):
-                                    yield PieceEvent(text=update.content.text)
-                        finally:
-                            get_task.cancel()
-                        response = prompt_task.result()
-                        yield StopEvent(stop_reason=response.stop_reason)
-                        return
+                async for event in self._pump(queue, prompt_task):
+                    yield event
             finally:
                 prompt_task.cancel()
         except TimeoutError as exc:
             await self._after_failure()
             raise AgentTimeoutError("agent turn timed out") from exc
+        except RequestError as exc:
+            raise AcpBridgeError(f"agent turn failed: {exc}") from exc
         finally:
             self._client.unsubscribe(session.session_id)
+
+    @staticmethod
+    async def _pump(
+        queue: asyncio.Queue[SessionUpdate], prompt_task: asyncio.Task[PromptResponse]
+    ) -> AsyncIterator[StreamEvent]:
+        while True:
+            get_task = asyncio.create_task(queue.get())
+            done, _pending = await asyncio.wait({prompt_task, get_task}, return_when=asyncio.FIRST_COMPLETED)
+            if get_task in done:
+                text = _message_text(get_task.result())
+                if text is not None:
+                    yield PieceEvent(text=text)
+            if prompt_task in done:
+                try:
+                    while not queue.empty():
+                        text = _message_text(queue.get_nowait())
+                        if text is not None:
+                            yield PieceEvent(text=text)
+                finally:
+                    get_task.cancel()
+                response = prompt_task.result()
+                yield StopEvent(stop_reason=response.stop_reason)
+                return
 
     async def _complete(self, model: str, messages: list[ChatMessage], max_tokens: int | None) -> CompletionResult:
         async with self._connect_lock:
@@ -366,12 +376,18 @@ class AcpBridge:
         self._connection = None
 
 
+def _message_text(update: SessionUpdate) -> str | None:
+    if isinstance(update, AgentMessageChunk) and isinstance(update.content, TextContentBlock):
+        return update.content.text
+    return None
+
+
 def _extract_pieces(queue: asyncio.Queue[SessionUpdate]) -> list[str]:
     pieces: list[str] = []
     while not queue.empty():
-        update = queue.get_nowait()
-        if isinstance(update, AgentMessageChunk) and isinstance(update.content, TextContentBlock):
-            pieces.append(update.content.text)
+        text = _message_text(queue.get_nowait())
+        if text is not None:
+            pieces.append(text)
     return pieces
 
 

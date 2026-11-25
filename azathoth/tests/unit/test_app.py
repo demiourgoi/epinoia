@@ -239,3 +239,28 @@ def test_streaming_timeout_closes_stream():
         body = "".join(chunk.decode() for chunk in response.iter_raw())
     assert "data: [DONE]" in body
     assert '"finish_reason": "stop"' in body or "cancelled" in body
+
+
+def test_agent_side_error_returns_502(client):
+    response = client.post(
+        "/v1/chat/completions",
+        json={"model": "mistral-small", "messages": [{"role": "user", "content": "please FAIL"}]},
+    )
+    assert response.status_code == 502
+    assert response.json()["error"]["type"] == "api_error"
+
+
+def test_agent_side_error_mid_stream_closes_sse(client):
+    with client.stream(
+        "POST",
+        "/v1/chat/completions",
+        json={
+            "model": "mistral-small",
+            "messages": [{"role": "user", "content": "please FAIL"}],
+            "stream": True,
+        },
+    ) as response:
+        assert response.status_code == 200
+        body = "".join(chunk.decode() for chunk in response.iter_raw())
+    assert "data: [DONE]" in body
+    assert '"finish_reason"' in body

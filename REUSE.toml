@@ -50,6 +50,8 @@ path = [
     ".agents/planning/azathoth/research/vibe-acp-agent-server.md",
     ".agents/planning/azathoth/design/detailed-design.md",
     ".agents/planning/azathoth/design/review-round1.md",
+    ".agents/planning/azathoth/design/review-round2.md",
+    ".agents/planning/azathoth/summary.md",
     ".agents/planning/azathoth/implementation/plan.md",
     "azathoth/pyproject.toml",
     "azathoth/uv.lock",
