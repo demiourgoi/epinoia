@@ -1,0 +1,100 @@
+[project]
+name = "azathoth"
+version = "0.1.0"
+description = "A localhost-only OpenAI-compatible chat completions proxy backed by an ACP agent with all tools disabled."
+authors = [{ name = "demiourgoi" }]
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "agent-client-protocol>=1.0.0",
+    "fastapi>=0.115.0",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.10.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.scripts]
+azathoth = "azathoth.app:run"
+
+[dependency-groups]
+dev = [
+    "deptry>=0.25.1",
+    "httpx>=0.28.0",
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.0.0",
+    "ruff>=0.15.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/azathoth"]
+
+[tool.mypy]
+files = ["src"]
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "acp.*"
+ignore_missing_imports = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.deptry.per_rule_ignores]
+# Used by modules added in later implementation steps (app.py, acp_client.py);
+# remove once all modules exist.
+DEP002 = ["fastapi", "uvicorn", "agent-client-protocol"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+fix = true
+extend-exclude = [".agents"]
+
+[tool.ruff.lint]
+select = [
+    "YTT",
+    "S",
+    "B",
+    "A",
+    "C4",
+    "T10",
+    "SIM",
+    "I",
+    "C90",
+    "E",
+    "W",
+    "F",
+    "PGH",
+    "UP",
+    "RUF",
+    "TRY",
+]
+ignore = [
+    "E501",
+    "E731",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.ruff.format]
+preview = true
