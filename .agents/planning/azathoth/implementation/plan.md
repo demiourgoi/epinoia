@@ -7,7 +7,7 @@
 - [x] Step 3: ACP bridge with tools disabled, fake-agent unit tests
 - [x] Step 4: FastAPI app — routes, loopback guard, lifespan
 - [x] Step 5: Streaming SSE path end-to-end
-- [ ] Step 6: README (vibe-acp instructions) and integration test hook
+- [x] Step 6: README (vibe-acp instructions) and integration test hook
 
 ## Working agreements
 
