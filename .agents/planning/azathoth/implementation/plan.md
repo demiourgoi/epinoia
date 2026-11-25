@@ -6,7 +6,7 @@
 - [x] Step 2: OpenAI wire models and error handlers
 - [x] Step 3: ACP bridge with tools disabled, fake-agent unit tests
 - [x] Step 4: FastAPI app — routes, loopback guard, lifespan
-- [ ] Step 5: Streaming SSE path end-to-end
+- [x] Step 5: Streaming SSE path end-to-end
 - [ ] Step 6: README (vibe-acp instructions) and integration test hook
 
 ## Working agreements
@@ -248,3 +248,15 @@ Implemented as planned. Deviations discovered by review:
 Demo verified against the live fake agent over HTTP: `/health` ok, a full
 `chat.completion` body with model echo, and an OpenAI-shaped 404 for
 `/v1/models`. Gates: `make check` green, 40 unit tests green.
+
+## Implementation notes — Step 5
+
+Implemented as planned, choosing the smaller change: the bridge gained a
+`stream()` async generator (per-piece `PieceEvent`s, final `StopEvent`)
+alongside buffered `complete()`, and the response chunk builders were split
+into role/content/finish builders around a shared completion id. Tests
+cover the SSE event sequence, a permission-denial turn mid-stream, and a
+mid-stream timeout closing the stream with a finish chunk plus `[DONE]`
+(found by review: without catching `AcpBridgeError` in the generator, the
+response was aborted with no terminator). Gates: `make check` green,
+42 unit tests green.
