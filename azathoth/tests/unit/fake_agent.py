@@ -92,7 +92,7 @@ class FakeAgent(Agent):
             else:
                 await self._reply(session_id, "write unexpectedly succeeded")
             return PromptResponse(stop_reason="end_turn")
-        await self._reply(session_id, f"hello from {model}")
+        await self._reply(session_id, f"hello from {model} and ")
         await self._reply(session_id, f"echo {text}")
         return PromptResponse(stop_reason="end_turn")
 

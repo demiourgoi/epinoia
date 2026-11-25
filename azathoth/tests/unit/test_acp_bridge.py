@@ -22,7 +22,7 @@ async def test_complete_returns_text_pieces_and_stop_reason(bridge):
     await bridge.start()
     try:
         result = await bridge.complete("mistral-small", _user_message("hi there"), None)
-        assert result.text_pieces == ["hello from mistral-small", "echo hi there"]
+        assert result.text_pieces == ["hello from mistral-small and ", "echo hi there"]
         assert result.stop_reason == "end_turn"
     finally:
         await bridge.stop()
@@ -32,7 +32,7 @@ async def test_complete_selects_model_config_option(bridge):
     await bridge.start()
     try:
         result = await bridge.complete("other-model", _user_message("hi"), None)
-        assert result.text_pieces == ["hello from other-model", "echo hi"]
+        assert result.text_pieces == ["hello from other-model and ", "echo hi"]
     finally:
         await bridge.stop()
 
@@ -62,7 +62,7 @@ async def test_timeout_reopens_connection():
         with pytest.raises(AgentTimeoutError):
             await bridge.complete("mistral-small", _user_message("STALL for a while"), None)
         result = await bridge.complete("mistral-small", _user_message("back online"), None)
-        assert result.text_pieces[0] == "hello from mistral-small"
+        assert result.text_pieces[0] == "hello from mistral-small and "
     finally:
         await bridge.stop()
 

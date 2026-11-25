@@ -59,9 +59,9 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.deptry.per_rule_ignores]
-# Used by modules added in later implementation steps (app.py, acp_client.py);
-# remove once all modules exist.
-DEP002 = ["fastapi", "uvicorn", "agent-client-protocol"]
+# The 404 handler must catch starlette's own HTTPException; fastapi's subclass
+# handler does not match routing errors raised by the router.
+DEP003 = ["starlette"]
 
 [tool.ruff]
 target-version = "py314"
