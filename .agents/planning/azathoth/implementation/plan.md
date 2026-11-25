@@ -5,7 +5,7 @@
 - [x] Step 1: Project scaffold (pyproject, settings, Makefile, lint gates)
 - [x] Step 2: OpenAI wire models and error handlers
 - [x] Step 3: ACP bridge with tools disabled, fake-agent unit tests
-- [ ] Step 4: FastAPI app — routes, loopback guard, lifespan
+- [x] Step 4: FastAPI app — routes, loopback guard, lifespan
 - [ ] Step 5: Streaming SSE path end-to-end
 - [ ] Step 6: README (vibe-acp instructions) and integration test hook
 
@@ -232,3 +232,19 @@ The fake agent needed real ``initialize``/``set_config_option`` responses
 model config-option selection, permission denial (cancelled outcome), file
 write denial (method-not-found seen by the agent), timeout recovery with
 reconnect, and spawn failure. Gates: `make check` and 25 unit tests green.
+
+## Implementation notes — Step 4
+
+Implemented as planned. Deviations discovered by review:
+
+- Starlette's own `HTTPException` must be handled for OpenAI-shaped 404s
+  (fastapi's subclass handler misses router-raised errors); deptry allows
+  the direct starlette import (DEP003) with a comment.
+- The route declares `response_model=None` — Starlette responses are not
+  pydantic response models.
+- The temporary DEP002 deptry ignore from step 1 was removed (all runtime
+  dependencies are now imported).
+
+Demo verified against the live fake agent over HTTP: `/health` ok, a full
+`chat.completion` body with model echo, and an OpenAI-shaped 404 for
+`/v1/models`. Gates: `make check` green, 40 unit tests green.
