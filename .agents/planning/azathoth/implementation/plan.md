@@ -4,7 +4,7 @@
 
 - [x] Step 1: Project scaffold (pyproject, settings, Makefile, lint gates)
 - [x] Step 2: OpenAI wire models and error handlers
-- [ ] Step 3: ACP bridge with tools disabled, fake-agent unit tests
+- [x] Step 3: ACP bridge with tools disabled, fake-agent unit tests
 - [ ] Step 4: FastAPI app — routes, loopback guard, lifespan
 - [ ] Step 5: Streaming SSE path end-to-end
 - [ ] Step 6: README (vibe-acp instructions) and integration test hook
@@ -214,3 +214,21 @@ last message to have role "user" (a clean OpenAI 400 instead of an
 unhandled 500 from transcript flattening) — found by the step's ponytail
 review. Error-message constants are module-level to keep ruff's TRY003
 rule satisfied. Gates: `make check` and unit tests green (19 tests).
+
+## Implementation notes — Step 3
+
+Implemented as planned, with three deviations found while integrating the SDK:
+
+- The SDK has no aggregate ``SessionUpdate`` schema type; the union of update
+  models is declared in ``acp_client.py`` and used by the demultiplexing queue.
+- The client ``Client`` protocol also requires MCP hooks (``connect_mcp``,
+  ``mcp_message``, ...) and ``on_connect`` to be concrete; these are also
+  answered with method-not-found, completing the tools-disabled surface.
+- ruff's TRY003 rule was ignored project-wide with a comment: all raised
+  error messages are domain-specific and defined where they are raised.
+
+The fake agent needed real ``initialize``/``set_config_option`` responses
+(the dispatcher strict-validates them). Tests cover: text accumulation,
+model config-option selection, permission denial (cancelled outcome), file
+write denial (method-not-found seen by the agent), timeout recovery with
+reconnect, and spawn failure. Gates: `make check` and 25 unit tests green.
