@@ -2,8 +2,8 @@
 
 ## Checklist
 
-- [ ] Step 1: Project scaffold (pyproject, settings, Makefile, lint gates)
-- [ ] Step 2: OpenAI wire models and error handlers
+- [x] Step 1: Project scaffold (pyproject, settings, Makefile, lint gates)
+- [x] Step 2: OpenAI wire models and error handlers
 - [ ] Step 3: ACP bridge with tools disabled, fake-agent unit tests
 - [ ] Step 4: FastAPI app — routes, loopback guard, lifespan
 - [ ] Step 5: Streaming SSE path end-to-end
@@ -195,3 +195,22 @@ the default `make test` run; hermetic suites stay green.
 
 **Demo:** README renders a complete setup story; `make test-integration`
 explains how to opt in.
+
+## Implementation notes — Step 1
+
+Implemented as planned. Deviations: none of substance. Two details:
+`AZATHOTH_ACP_ARGS` accepts either a JSON list (pydantic-settings's native
+complex-field decoding) or a space-separated string (shlex split through a
+`NoDecode` annotation + `field_validator`, since the settings source fails on
+non-JSON strings before validators run). A temporary `[tool.deptry.per_rule_ignores]`
+section (commented as such) keeps `make check` green while later-step modules
+are still missing; it must be removed once `app.py` and `acp_client.py` exist.
+Gates: `make check` and `make test` green on Python 3.14.5.
+
+## Implementation notes — Step 2
+
+Implemented as planned. One deviation: the request now also requires the
+last message to have role "user" (a clean OpenAI 400 instead of an
+unhandled 500 from transcript flattening) — found by the step's ponytail
+review. Error-message constants are module-level to keep ruff's TRY003
+rule satisfied. Gates: `make check` and unit tests green (19 tests).
