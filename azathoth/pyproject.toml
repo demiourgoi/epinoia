@@ -91,6 +91,8 @@ select = [
 ignore = [
     "E501",
     "E731",
+    # Raised error messages are domain-specific and defined where they are raised
+    "TRY003",
 ]
 
 [tool.ruff.lint.per-file-ignores]
