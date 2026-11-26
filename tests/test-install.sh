@@ -22,6 +22,7 @@ assert_rc 0 "make install exits 0"
 assert_exists "$PKG/.agents/skills/ponytail-review-pdd/SKILL.md" "installs the ponytail-review-pdd skill into the package"
 assert_exists "$PKG/.agents/skills/ponytail-review-pdd/scripts/run-review.sh" "installs the skill scripts"
 assert_exists "$PKG/.agents/skills/pdd/SKILL.md" "installs the other skills"
+assert_exists "$PKG/.agents/skills/mistral-vibe-cli/SKILL.md" "installs the mistral-vibe-cli skill into the package"
 assert_exists "$MONOREPO/.opencode/agents/ponytail-review-readonly.md" "installs the opencode agent at the git root"
 assert_exists "$MONOREPO/.opencode/agents/LICENSE" "installs the agent license sidecar at the git root"
 assert_exists "$MONOREPO/.opencode/opencode.json" "installs the opencode config at the git root"
@@ -38,6 +39,7 @@ assert_rc 0 "install into the repository root exits 0"
 assert_exists "$MONOREPO/.opencode/opencode.json" "installs the opencode config into the repository root"
 assert_exists "$MONOREPO/.vibe/config.toml" "installs the vibe config into the repository root"
 assert_exists "$MONOREPO/.agents/skills/ponytail-review-pdd/SKILL.md" "installs the skills into the repository root"
+assert_exists "$MONOREPO/.agents/skills/mistral-vibe-cli/SKILL.md" "installs the mistral-vibe-cli skill into the repository root"
 
 group "install target: default TARGET_DIR is the caller's PWD"
 
@@ -56,6 +58,33 @@ run make -C "$REPO_ROOT" install TARGET_DIR="$PKG"
 assert_rc 0 "reinstall exits 0"
 assert_exists "$MONOREPO/.opencode/opencode.json" "reinstall keeps the config in place"
 assert_exists "$PKG/.vibe/config.toml" "reinstall keeps the vibe config in place"
+
+group "install target: every listed skill installs"
+
+# The SKILLS list in the Makefile is the contract: each of its entries must
+# land as a SKILL.md in the target.
+for SKILL in codebase-summary edenai-zed-config mistral-vibe-cli pdd \
+    ponytail-review ponytail-review-pdd; do
+    assert_exists "$PKG/.agents/skills/$SKILL/SKILL.md" "installs the listed skill $SKILL"
+done
+
+group "install target: skill registry guard"
+
+# A listed skill missing from skills/ must fail the install loudly. The
+# install target refuses to read from a repository it is installing into, so
+# the guard runs against a throwaway copy of this repository with one listed
+# skill directory removed.
+REPO_COPY="$WORK_DIR/install-repo-copy"
+mkdir -p "$REPO_COPY"
+tar -C "$REPO_ROOT" --exclude=.git --exclude=.local -cf - . | tar -C "$REPO_COPY" -xf -
+rm -rf "$REPO_COPY/skills/ponytail-review-pdd"
+GUARD_TARGET="$WORK_DIR/install-guard-target"
+mkdir -p "$GUARD_TARGET"
+run make -C "$REPO_COPY" install TARGET_DIR="$GUARD_TARGET"
+assert_rc 2 "install with a listed skill missing exits 2"
+assert_grep "listed skill directory not found: skills/ponytail-review-pdd" "missing-skill error message"
+assert_missing "$GUARD_TARGET/.vibe/config.toml" "does not install other artifacts when a skill is missing"
+rm -rf "$REPO_COPY" "$GUARD_TARGET"
 
 group "install target: guards"
 
