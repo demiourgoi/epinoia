@@ -24,8 +24,9 @@ binary from [mistralai/mistral-vibe](https://github.com/mistralai/mistral-vibe)
 — as an autonomous coding worker. It is a port of the Hermes Agent `opencode`
 delegation skill, translated to Vibe: instead of managing an interactive TUI
 in the background, you run Vibe's **programmatic mode** (`vibe --prompt`),
-which executes a task as a bounded non-interactive process and exits with a
-final answer, a JSON transcript, and a documented exit code.
+which executes a task as a bounded non-interactive process and exits with
+the final answer (or a full JSON transcript with `--output json`) and a
+documented exit code.
 
 Vibe runs in your working directory with read/write access, a shell, and
 configurable tools, so treat every delegated task like any other subprocess
@@ -122,8 +123,8 @@ Execute the delegated task in programmatic mode.
 - You SHOULD pass `--output json` and `--output-dir DIR` when you need the
   full transcript plus `export.json` (token usage, cost, stop reason,
   warnings, subagent breakdown) for auditing.
-- You SHOULD record `VIBE_SESSION=1` awareness: commands Vibe runs get it in
-  their environment; scripts can use it, and so can you when checking logs.
+- You SHOULD know that commands Vibe runs get `VIBE_SESSION=1` in their
+  environment, so logs and hook scripts can detect that they ran under Vibe.
 
 ### 4. Interpret the outcome
 
@@ -246,14 +247,16 @@ re-run the API tests." --continue
 ### Parallel isolated tasks
 
 ```bash
-vibe "Fix issue #101 and commit" --worktree issue-101
-vibe "Add regression tests for the parser and commit" --worktree parser-tests
+vibe --prompt "Fix issue #101 and commit" --worktree issue-101
+vibe --prompt "Add regression tests for the parser and commit" --worktree parser-tests
 ```
 
 ### Reference files in a prompt
 
-Note `@path` references inside the prompt text when delegating in a directory
-Vibe trusts.
+```bash
+vibe --prompt "Read @src/agent.py and add error handling for network
+failures, then run the test suite." --max-turns 20
+```
 
 ## Troubleshooting
 
