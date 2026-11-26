@@ -34,8 +34,8 @@ so it travels with the skill when the directory is copied elsewhere
   `agentskills validate` specification check, and later rewritten in
   python3 as `validate-skill.py`, as required by the skill's own rule
   that scripts longer than 4 lines of bash MUST be python3, and a uv
-  project skeleton (adapted from Harold's `harold-mcp/pyproject.toml`,
-  without authors) was added under `assets/uv-project-skeleton/`. Its
+  project skeleton (structure modeled on Harold's
+  `harold-mcp/pyproject.toml`, no content copied verbatim) was added under `assets/uv-project-skeleton/`. Its
   LICENSE sidecar states the modifications, as required by Apache-2.0
   §4(b).
 
