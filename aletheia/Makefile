@@ -1,4 +1,4 @@
-.PHONY: install webui check test
+.PHONY: install webui check test run
 install: ## Install the virtual environment (Python 3.14)
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
@@ -20,3 +20,6 @@ check: ## Run code quality tools
 test: ## Test the code with pytest
 	@echo "🚀 Testing code: Running pytest"
 	@uv run python -m pytest
+
+run: ## Run the aletheia CLI
+	@uv run aletheia

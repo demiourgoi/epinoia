@@ -1,0 +1,6 @@
+[[hooks]]
+name = "aletheia-baseline"
+type = "post_tool"
+match = "re:edit|write_file"
+command = "python .vibe/hooks/aletheia_baseline.py"
+description = "Remind the agent to record edited files in the Aletheia review baseline."
