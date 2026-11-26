@@ -26,7 +26,7 @@ If this page doesn't answer your question, open [`.agents/summary/index.md`](.ag
 
 - **What**: `epinoia` is demiourgoi's internal development toolkit. It ships reusable **agent skills** and **agent configurations** for opencode and Mistral Vibe, and orchestrates read-only reviews of Prompt-Driven Development (PDD) artifacts. There is no application binary, package build, or runtime service.
 - **Two skill trees**: `skills/` holds distributable artifacts copied into target projects by `make install`; `.agents/skills/` holds development-only skills that are never installed elsewhere.
-- **Stack**: Bash for all executable logic, Markdown for skills/agents/docs, JSON for opencode permissions, TOML for Vibe configuration, `Makefile` for tasks, `uvx` for compliance and skill validation. No Python/Node application code and no lockfile.
+- **Stack**: Bash for executable logic in the skills trees, Markdown for skills/agents/docs, JSON for opencode permissions, TOML for Vibe configuration, `Makefile` for tasks, `uvx` for compliance and skill validation. The `aletheia/` subproject is the exception: a Python 3.14 package (FastMCP, `uv.lock`) with a committed React GUI bundle.
 - **License/compliance**: original content is MIT; bundled third-party content keeps upstream licenses and is tracked in `THIRD-PARTY-NOTICES.md`, `REUSE.toml`, and per-directory `LICENSE` sidecars.
 
 See: [`.agents/summary/codebase_info.md`](.agents/summary/codebase_info.md), [`.agents/summary/dependencies.md`](.agents/summary/dependencies.md).
@@ -44,6 +44,7 @@ graph TB
     R --> VB[.vibe/<br>Vibe agent + model preset]
     R --> TS[tests/<br>shell test suites]
     R --> BN[bin/<br>SOP-to-skill converter]
+    R --> AL[aletheia/<br>MCP change-review server]
     R --> LC[LICENSES/<br>upstream license texts]
     SK --> PDD[pdd]
     SK --> CS[codebase-summary]
@@ -66,6 +67,7 @@ See: [`.agents/summary/components.md`](.agents/summary/components.md).
 <!-- tags: entry-points -->
 
 - **`Makefile`** — `install` copies artifacts into a target project; `test` runs hermetic suites; `test-e2e` adds live opencode smoke tests.
+- **`aletheia/`** — installable MCP server (Python 3.14, FastMCP stdio + loopback React review GUI) for asynchronous change review; `aletheia` CLI entry points, own `Makefile` (`install`, `webui`, `check`, `test`) and README.
 - **`skills/ponytail-review-pdd/scripts/run-review.sh`** — validates a review request, computes code diffs, picks the next `rev{J}`, builds the prompt, and runs `opencode run --agent ponytail-review-readonly`.
 - **`skills/ponytail-review-pdd/scripts/compute-diff.sh`** — builds `uncommitted` or `commits` diffs and excludes review artifacts.
 - **`.opencode/agents/ponytail-review-readonly.md`** — the reviewer prompt; its frontmatter `model:` line is the single source of truth for the default review model.
@@ -92,6 +94,8 @@ See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
 9. **Compliance is part of every change.** Third-party content requires a `LICENSE` sidecar (verbatim copies stay byte-identical), a `THIRD-PARTY-NOTICES.md` entry, and a `REUSE.toml` annotation. Original new files also need REUSE annotations. Finish with `uvx reuse lint`.
 10. **Model/limits values in the Vibe config are deliberate.** `zai-glm-5-3` has a 1M-token context window; `auto_compact_threshold = 800000` leaves room for its 128k maximum output. Do not lower them without checking the provider's documented limits.
 11. **Opencode's local version may lack a `grep` tool.** The Vibe agent comments note that Vibe 3.1.0 does not expose one; shell allow/deny lists and built-in `read_file` are used instead.
+12. **aletheia's `edit` tool replaces two built-ins.** It is both an exact-string editor (existing files) and a whole-file creator (`old_string=""`, missing file). Hosts disable **both** built-ins: `disabled_tools = ["edit", "write_file"]`. The tool confines paths to the trusted root (git root of the CWD at server start), registers the baseline on first change (created files get creation markers; rejecting deletes them), and never creates parent directories. Aletheia tests, lint, and gates: `make -C aletheia check && make -C aletheia test`.
+13. **Never hand-edit `aletheia/webui/dist/assets`.** The GUI bundle is generated (`make webui`, checked into the package); edit `aletheia/webui/` sources and rebuild.
 
 ## Repo-specific commands
 
@@ -107,6 +111,9 @@ See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
 | `.agents/skills/agent-sop-author/validate-skill.sh skills/<name>` | Validate a skill |
 | `uvx reuse lint` | Run the license/compliance gate |
 | `bin/agent-sop-to-skill.sh <skill-name>` | Convert legacy `*.sop.md` sources into a skill |
+| `make -C aletheia check \|\| test` | Lint/type-check and test the aletheia server (uv, Python 3.14) |
+| `uvx --from aletheia aletheia` | Run the aletheia MCP server (stdio) |
+| `aletheia setup` | Install the baseline-reminder Vibe hook into `.vibe/hooks.toml` at the git root |
 
 The Vibe model preset is validated by the Vibe CLI itself at startup; `vibe config schema` prints the local schema if a check is needed.
 

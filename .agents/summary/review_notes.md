@@ -42,6 +42,10 @@ Areas with limited coverage:
 5. Keep `AGENTS.md` and this knowledge base in sync after changes to skill layout, install placement, review file naming, or the model default.
 6. Document the Vibe review path in the same level of detail as the opencode path, or explicitly mark it as a manual alternative (it is currently tested only by installation).
 
+## Refresh log
+
+- This knowledge base was first generated before the `aletheia/` subproject existed; the findings above applied to the skills-only repository. It has since been extended with aletheia coverage (`codebase_info.md`, `components.md`, `interfaces.md`, `workflows.md` section 8, `data_models.md`, `dependencies.md`). A full regeneration with the `codebase-summary` skill is recommended to re-check `architecture.md` (it still describes the skills-only four-layer model with "no server, build, or package").
+
 ## Note on generated content
 
 This knowledge base was generated from the code and documentation at the time of the run. It intentionally avoids volatile metrics (line counts, file sizes, test counts). Update the affected files when those structural facts change.

@@ -10,7 +10,7 @@
 | `git` | `make install`, `compute-diff.sh`, `run-review.sh`, tests | The installer resolves the target's git root; the reviewer runs at it |
 | `make` | `make install`, `make test`, `make test-e2e` | Thin wrappers over the shell entry points |
 | `opencode` | `run-review.sh`, e2e suites | Must be authenticated for the selected model's provider |
-| `uvx` | `validate-skill.sh`, `update-third-party-notices`, `bin/agent-sop-to-skill.sh` | Downloads `reuse`, `skills-ref`, and `strands-agents-sops` on first use |
+| `uvx` | `validate-skill.sh`, `update-third-party-notices`, `bin/agent-sop-to-skill.sh`, aletheia (`uvx --from aletheia aletheia`) | Downloads `reuse`, `skills-ref`, and `strands-agents-sops` on first use; runs the aletheia server |
 | Standard Unix tools | Scripts and tests | `sed`, `grep`, `find`, `mktemp`, `dirname`, `basename`, `realpath`/`readlink`, `tail`, `date` |
 
 ### Optional helpers
@@ -33,8 +33,9 @@ The opencode default is deliberately not hardcoded in `run-review.sh`: the scrip
 
 ## Python and package tooling
 
-- No Python application code, no `pyproject.toml`, no `requirements.txt`, no lockfile.
-- `uvx` runs ephemeral tools; nothing is installed into the repository.
+- The skills trees contain no Python; aletheia is a separate package rooted at `aletheia/` with its own `pyproject.toml` and `uv.lock` (Python 3.14 pinned).
+- aletheia runtime dependencies: `fastmcp` (MCP stdio server), `pydantic`; dev/test: `ruff`, `mypy`, `pytest`. The GUI is prebuilt (`uv make webui`, Node/npm + Vite) and committed under `aletheia/webui/dist`.
+- `uvx` runs ephemeral tools elsewhere; nothing else is installed into the repository.
 - `uvx reuse lint` is the compliance gate.
 - `uvx --from skills-ref agentskills validate` is the authoritative Agent Skills check.
 - `uvx strands-agents-sops skills` converts legacy SOP files.
