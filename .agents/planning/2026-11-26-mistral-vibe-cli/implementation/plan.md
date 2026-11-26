@@ -110,3 +110,13 @@ bullets now carry "because" on the constraint line). Validation:
 including the `skills-ref` Agent Skills specification check. Demo: a temp
 `make install` places `.agents/skills/mistral-vibe-cli/SKILL.md` (still via
 the wildcard copy until Step 2).
+
+### Step 1: review outcome
+
+Review rev1 found one must-fix: the parallel-worktree examples used a
+positional prompt, which starts the interactive TUI the skill itself forbids;
+they now use `vibe --prompt ... --worktree NAME`. Also fixed: the Overview no
+longer implies every run prints a JSON transcript; the `@path` example is
+now a concrete invocation; the `VIBE_SESSION=1` constraint is stated plainly.
+Rev2 confirms: Ship. Validation still passes with zero warnings after the
+fixes.
