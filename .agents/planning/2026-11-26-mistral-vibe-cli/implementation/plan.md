@@ -4,7 +4,8 @@
 
 - [x] Step 1: Create the `mistral-vibe-cli` skill and validate it
 - [x] Step 2: Make the Makefile install target install the skill explicitly
-- [ ] Step 3: Final verification and compliance
+- [x] Step 3: Final verification and compliance
+- [x] Step 4: CI: run all Makefile and aletheia tests on PRs and merges
 
 ## Working agreements
 
@@ -136,3 +137,60 @@ and `make test` passes fully once `opencode` is on PATH — note the
 ponytail-review-pdd hermetic suites require the `opencode` binary even for
 dry runs; in this sandbox they failed only because the binary was absent,
 and pass with it installed.
+
+## Step 4: CI — run all Makefile and aletheia tests on PRs and merges
+
+**Objective:** Add a GitHub Actions workflow that runs `make test` (all
+hermetic suites from the Makefile) and the aletheia project's test suite
+(`make -C aletheia test`) on every pull request and every merge (push to
+`main`). The live `make test-e2e` suites stay out of CI because they need
+opencode credentials and spend model tokens.
+
+**Guidance:** The ponytail-review-pdd hermetic suites require the `opencode`
+binary even for dry runs, so the workflows job installs it
+(`npm install -g opencode-ai`). The aletheia job uses `uv` (via
+astral-sh/setup-uv) and the project's own Makefile targets (`install`,
+`test`), with Python 3.14 per `aletheia/.python-version`.
+
+**Tests:** The workflow YAML parses and its jobs mirror commands proven green
+locally (`make test` with opencode on PATH; `make -C aletheia install
+test`).
+
+**Integration:** Adds `.github/workflows/tests.yml`; no product code changes.
+
+**Demo:** Both jobs' command sequences are exactly the locally passing
+commands; the workflow triggers on `pull_request` and `push` to `main`.
+
+## Step 4: environment findings (recorded during testing)
+
+Running the suites surfaced two environment facts, both fixed outside the
+repo and recorded here for completeness: the sandbox's global git config
+forced SSH commit signing through an unavailable helper (fixture commits
+failed with "failed to write commit object"; disabled in the sandbox), and
+the `opencode` binary must be on PATH for the dry-run suites. The workflow
+installs opencode so CI matches the documented prerequisites.
+
+## Step 3: Implementation notes
+
+Added the new files to the original-content block in `REUSE.toml`:
+`skills/mistral-vibe-cli/SKILL.md`, `.github/workflows/tests.yml`, and the
+PDD artifact tree via the glob
+`.agents/planning/2026-11-26-mistral-vibe-cli/**`. One deviation from the
+design text: `reuse lint` flagged a false in-file header in the design
+document itself (it quoted the literal SPDX field names), so the quote was
+reworded to prose. No THIRD-PARTY-NOTICES entry: no third-party text is
+embedded. All gates green: skill validation (0 errors, 0 warnings),
+`make test` (3 suites), `uvx reuse lint`, aletheia pytest (97 tests).
+
+## Step 4: Implementation notes
+
+Added `.github/workflows/tests.yml` with two parallel jobs, both triggered
+on `pull_request` and on `push` to `main` (a merge is a push to main):
+`skills-repo` installs Node 22 and the `opencode-ai` npm package (the
+hermetic suites need the binary even for dry runs) and runs `make test`;
+`aletheia` sets up `uv` with Python 3.14 and runs `make install` and
+`make test` in the aletheia directory. The live `make test-e2e` suites stay
+out of CI because they need opencode credentials and spend model tokens; the
+workflow header records that. The exact command sequences were verified
+green in this environment before being encoded. The step-3-4 review
+(step-3-4-review-rev1) verdict: Ship.

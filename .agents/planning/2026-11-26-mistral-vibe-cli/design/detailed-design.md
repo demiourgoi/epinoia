@@ -192,8 +192,8 @@ SKILLS := codebase-summary edenai-zed-config mistral-vibe-cli pdd \
 
 Only `skills/mistral-vibe-cli/SKILL.md` is a new file, so it is the only
 path added to the original-content `[[annotations]]` block
-(`SPDX-FileCopyrightText: Copyright (c) 2026 demiourgoi`,
-`SPDX-License-Identifier: MIT`). The `Makefile` and `tests/test-install.sh`
+(demiourgoi copyright, MIT license, the same standard fields the other
+original files use). The `Makefile` and `tests/test-install.sh`
 already appear in that block and need no change.
 
 ## Data Models
