@@ -84,13 +84,20 @@ path = [
     ".agents/skills/agent-sop-author/SKILL.md",
     ".agents/skills/agent-sop-author/LICENSE",
     ".agents/skills/agent-sop-author/validate-skill.py",
-    ".agents/skills/agent-sop-author/assets/uv-project-skeleton/**",
 ]
 SPDX-FileCopyrightText = [
     "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
     "Copyright (c) 2026 demiourgoi",
 ]
 SPDX-License-Identifier = "Apache-2.0"
+
+# uv project skeleton for agent-sop-author scripts that need third-party
+# dependencies. Structure modeled on demiourgoi/Harold harold-mcp/pyproject.toml
+# (no content copied verbatim); values rewritten here.
+[[annotations]]
+path = [".agents/skills/agent-sop-author/assets/uv-project-skeleton/**"]
+SPDX-FileCopyrightText = "Copyright (c) 2026 demiourgoi"
+SPDX-License-Identifier = "MIT"
 
 # Documentation from agentskills/agentskills. The upstream repository licenses
 # its code under Apache-2.0 but its documentation under CC-BY-4.0.

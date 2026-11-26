@@ -23,7 +23,7 @@ NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 STEP_RE = re.compile(r"^### \d+\.", re.MULTILINE)
 CONSTRAINTS_RE = re.compile(r"^\*\*Constraints:\*\*", re.MULTILINE)
 RFC2119_RE = re.compile(r"You (MUST|SHOULD|MAY)\b")
-NEGATIVE_RE = re.compile(r"You (MUST NOT|SHOULD NOT)(?!.*\b(because|since)\b)")
+NEGATIVE_RE = re.compile(r"You (MUST NOT|SHOULD NOT)(?!.*\b(because|since|as)\b)(?!.*to avoid)")
 
 
 def count_frontmatter_boundary(lines: list[str]) -> bool:
