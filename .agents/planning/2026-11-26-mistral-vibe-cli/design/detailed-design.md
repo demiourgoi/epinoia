@@ -27,7 +27,7 @@ Consolidated from the requirements clarification (recorded in the project's
    `compatibility` frontmatter field states the runtime requirement (the Vibe
    CLI, git).
 2. **R2 — Spec compliance.** The skill passes the `skills-ref` Agent Skills
-   specification validation (`uvx --from skills-ref agentsskills validate`),
+   specification validation (`uvx --from skills-ref agentskills validate`),
    the epinoia SOP structure validation
    (`.agents/skills/agent-sop-author/validate-skill.sh`: Overview,
    Parameters with "Constraints for parameter acquisition", numbered
@@ -67,8 +67,9 @@ Consolidated from the requirements clarification (recorded in the project's
 5. **R5 — Tests.** `tests/test-install.sh` asserts, per installed skill:
    the `SKILL.md` lands in `TARGET_DIR/.agents/skills/<name>/SKILL.md`
    (including `mistral-vibe-cli`), and the new guard rejects a run when a
-   listed skill directory is missing (verified by a temporary sandbox copy of
-   the repository). The full hermetic suite (`make test`) still passes.
+   listed skill directory is missing. Because the install target refuses to
+   run against this repository itself, the guard is exercised through a
+   temporary copy of the repository with one listed skill removed. The full hermetic suite (`make test`) still passes.
 6. **R6 — Compliance.** `skills/mistral-vibe-cli/SKILL.md` is original
    demiourgoi content under MIT, added to the original-content
    `[[annotations]]` block in `REUSE.toml` together with the Makefile and
@@ -189,12 +190,11 @@ SKILLS := codebase-summary edenai-zed-config mistral-vibe-cli pdd \
 
 ### Component 4: `REUSE.toml` annotation
 
-The file paths `skills/mistral-vibe-cli/SKILL.md`, `Makefile`, and
-`tests/test-install.sh` (the latter two newly listed paths, since they move
-into the explicit set — they are already annotated; the skill file is the
-only new file) join the original-content `[[annotations]]` block
+Only `skills/mistral-vibe-cli/SKILL.md` is a new file, so it is the only
+path added to the original-content `[[annotations]]` block
 (`SPDX-FileCopyrightText: Copyright (c) 2026 demiourgoi`,
-`SPDX-License-Identifier: MIT`).
+`SPDX-License-Identifier: MIT`). The `Makefile` and `tests/test-install.sh`
+already appear in that block and need no change.
 
 ## Data Models
 
@@ -293,7 +293,7 @@ recipe. The two structured artifacts are:
 3. **Put the skill in `.agents/skills/` (development-only tree).**
    Rejected: the skill is meant to be distributed into target projects, so
    it belongs in the distributable `skills/` tree.
-4. **Add helper scripts (e.g. a wizard or a portfolio-based shell wrapper).**
+4. **Add helper scripts (e.g. wrapper scripts around common `vibe` invocations).**
    Rejected: no logic in this port is stable enough across products to be a
    script; terminal tools vary across agents, so the instructions must stay
    in prose. The ponytail principle applies: don't remove prose from a
