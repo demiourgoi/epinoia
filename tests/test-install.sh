@@ -83,7 +83,12 @@ SKILLS_MAKE="$(awk '
     END { gsub(/\\/, "", acc); print acc }
 ' "$REPO_ROOT/Makefile" | tr -s "[:space:]" " " | sed "s/^ //; s/ $//")"
 
-assert_nonempty "$REPO_ROOT/Makefile" "the Makefile defines a SKILLS variable"
+# assert_nonempty takes a file path, so the parsed variable is checked directly.
+if [ -n "$SKILLS_MAKE" ]; then
+    ok "the Makefile defines a SKILLS variable"
+else
+    fail "the Makefile defines a SKILLS variable"
+fi
 if [ "$SKILLS_MAKE" = "$SKILLS_LIST" ]; then
     ok "the suite's skill list matches the Makefile's SKILLS"
 else
