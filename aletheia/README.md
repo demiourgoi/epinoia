@@ -57,15 +57,16 @@ it reports is the one to open.
 
 ## Mistral Vibe setup
 
-Follow these three steps to use Aletheia with the Vibe CLI. Background:
+There are three steps; [`aletheia setup`](#automating-the-setup) does all of
+it for you. Do them by hand to install into an existing configuration, or to
+see what the command writes. Background:
 [Vibe configuration reference](https://docs.mistral.ai/vibe/code/cli/configuration-reference)
 and [MCP servers docs](https://docs.mistral.ai/vibe/code/cli/mcp-servers).
 
 ### 1. Register the MCP server
 
-Append one `[[mcp_servers]]` block to `~/.vibe/config.toml` (user level) or
-`./.vibe/config.toml` at the repository root (project level). Append it
-rather than replacing existing blocks, and create the file if needed. Set
+Add one `[[mcp_servers]]` block to `~/.vibe/config.toml` (user level) or
+`./.vibe/config.toml` (project level); keep the blocks already there. Set
 `command` to the absolute path of your `aletheia` executable:
 
 ```toml
@@ -78,11 +79,13 @@ args = []
 env = { }
 ```
 
-If you installed from PyPI, use `uvx` instead:
+If you run it from PyPI with `uvx`, point `command` at `uvx` instead;
+`aletheia setup` does this automatically when it runs through `uvx` (see
+[Automating the setup](#automating-the-setup)):
 
 ```toml
 command = "uvx"
-args = ["--from", "aletheia", "aletheia"]
+args = ["--from", "epinoia-aletheia", "aletheia"]
 ```
 
 ### 2. Forbid the built-in edit and write_file tools (recommended)
@@ -95,45 +98,79 @@ review baseline automatically in the same call — an edit made this way
 **cannot** skip the baseline, so nothing you would want to review goes
 unreviewed.
 
-Making it the only path is what actually enforces that, and it is more
-effective than the reminder hook of step 3: the hook only *nudges* the
-agent after an edit already happened (best-effort coaching that cannot
-inspect the baseline), while disabling the built-ins leaves the agent no
-way to change a file except through Aletheia. Forbid both built-ins in the
-same `config.toml`:
+Making it the only path is what actually enforces that. Forbid both
+built-ins in the same `config.toml`:
 
 ```toml
 disabled_tools = ["edit", "write_file"]
-# or, equivalently:
-[tools.edit]
-permission = "never"
-[tools.write_file]
-permission = "never"
 ```
 
-Vibe prefixes MCP tools with the server name, so Aletheia's tool appears
-as `aletheia_edit` and is not affected by `disabled_tools`. These keys also
+Vibe prefixes MCP tools with the server name, so Aletheia's tool appears as
+`aletheia_edit` and is not affected by `disabled_tools`. These keys also
 work in a custom agent file (`.vibe/agents/<name>.toml`) to scope the
 restriction to one agent.
 
-"Force edits through Aletheia" is not strictly required — the agent can
-also call `record_baseline` by hand before editing with its own tools —
-but it is the reliable setup and the one this README recommends.
+### 3. Add the editing policy to AGENTS.md (recommended)
 
-### 3. Optionally install the reminder hook (fallback)
+Disabling the built-ins leaves the agent no *working* way to edit a file
+except through Aletheia, but it does not tell the agent which tool to use
+instead. Add this to `~/.vibe/AGENTS.md` (user level) or the project's
+`AGENTS.md`: Vibe loads both into the agent's context
+([docs](https://docs.mistral.ai/vibe/code/cli/agents#agents-md-support)),
+and in testing this combination — disabled built-ins **plus** these
+instructions — is what works best:
 
-The hook still earns its keep for the change channels step 2 cannot close
-(shell commands, other MCP servers): it nudges the agent to record files
-after it edits them by other means, so reviews are not missed:
+```markdown
+# Aletheia: creating and editing text files
 
-```console
-aletheia setup            # project-level (this repository)
-aletheia setup --global   # user-level (~/.vibe/)
+When creating or editing any plain text file:
+
+- You MUST ALWAYS use the tool `aletheia_edit` (your host may list it as `mcp_aletheia.edit`)
+- If the tool errors, report the failure rather than editing by other means
+- You MUST ALWAYS suggest that the user review the changes at the URL the edit tool returns
 ```
 
-Run `aletheia setup` from inside the project you want to protect; it
-reports where it installed the hook. The hook is best-effort coaching, so
-keep step 2 as the primary mechanism.
+Adding it to the project's `AGENTS.md` (committed to the repository) covers
+everyone working in that project; `~/.vibe/AGENTS.md` covers every
+project for you.
+
+### Alternative: the reminder hook (does not work as well)
+
+Before the steps above existed, `aletheia setup` installed a `post_tool`
+hook that *nudges* the agent to record files it edited by other means. It
+still installs with `aletheia setup --legacy-hook`, and earns its keep for
+the change channels `disabled_tools` cannot close (shell commands, other
+MCP servers). **Prefer steps 2 and 3:** the hook runs in its own process
+after an edit already happened, cannot see the review baseline, and only
+asks the agent to fix things up, so agents frequently ignore it. Forbid the
+built-ins and state the policy instead; keep the hook only as a fallback.
+
+### Automating the setup
+
+`aletheia setup` performs the three steps above on `config.toml` and
+`AGENTS.md`:
+
+```console
+aletheia setup                    # project-level (this repository's git root)
+aletheia setup --global           # user-level (~/.vibe/)
+aletheia setup --legacy-hook      # the old reminder-hook fallback instead
+```
+
+Run it from inside the project you want to configure; without `--global` it
+installs at the git root and reports where. Every file is edited
+surgically: other MCP servers, models, comments and your own `AGENTS.md`
+prose are preserved, and rerunning it changes nothing. The editing policy
+in `AGENTS.md` lives between `<!-- aletheia:begin ... -->` and
+`<!-- aletheia:end -->` markers and is refreshed in place, so you can edit
+around it. Restart Vibe afterwards.
+
+When `aletheia setup` itself runs through `uvx`, it registers the server
+with `command = "uvx"` / `args = ["--from", "epinoia-aletheia",
+"aletheia"]`, because the temporary environment `uvx` built is gone once
+the command exits. Otherwise it uses the installed `aletheia` script (the
+venv/`pipx` install above). It tells the two apart from the interpreter
+path: a `uvx`/`uv tool run` environment always lives under a
+`.../archive-v0/` cache directory.
 
 ## Using Aletheia with other MCP hosts
 
@@ -142,7 +179,7 @@ Any MCP host that supports stdio can launch Aletheia the same way:
 ```json
 {
   "mcpServers": {
-    "aletheia": { "command": "uvx", "args": ["--from", "aletheia", "aletheia"] }
+    "aletheia": { "command": "uvx", "args": ["--from", "epinoia-aletheia", "aletheia"] }
   }
 }
 ```

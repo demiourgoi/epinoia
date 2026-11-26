@@ -1,5 +1,7 @@
 [project]
-name = "aletheia"
+# `aletheia` and `aletheia-mcp` are taken on PyPI by unrelated projects;
+# the distribution is `epinoia-aletheia`, the console script is `aletheia`.
+name = "epinoia-aletheia"
 version = "0.1.0"
 description = "An MCP server for Zed-style asynchronous change review for terminal coding agents."
 authors = [{ name = "Juan Rodriguez", email = "juanrh@pm.me" }]
@@ -20,6 +22,7 @@ dependencies = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "starlette>=0.48.0",
+    "tomlkit>=0.13.2",
     "uvicorn>=0.38.0",
 ]
 

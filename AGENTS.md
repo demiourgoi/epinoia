@@ -112,8 +112,8 @@ See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
 | `uvx reuse lint` | Run the license/compliance gate |
 | `bin/agent-sop-to-skill.sh <skill-name>` | Convert legacy `*.sop.md` sources into a skill |
 | `make -C aletheia check \|\| test` | Lint/type-check and test the aletheia server (uv, Python 3.14) |
-| `uvx --from aletheia aletheia` | Run the aletheia MCP server (stdio) |
-| `aletheia setup` | Install the baseline-reminder Vibe hook into `.vibe/hooks.toml` at the git root |
+| `uvx --from epinoia-aletheia aletheia` | Run the aletheia MCP server (stdio) |
+| `aletheia setup [--global]` | Configure Vibe for aletheia: MCP server, disabled built-in `edit`/`write_file`, `AGENTS.md` policy |
 
 The Vibe model preset is validated by the Vibe CLI itself at startup; `vibe config schema` prints the local schema if a check is needed.
 

@@ -8,7 +8,8 @@ the Mistral Vibe setup, see [README.md](README.md).
 ```
 src/aletheia_mcp/
   main.py            cyclopts CLI: default = run the MCP server (stdio),
-                     `setup` subcommand installs the Vibe hook
+                     `setup` subcommand configures Vibe (MCP server,
+                     disabled built-ins, AGENTS.md policy)
   server/
     server.py        FastMCP instance + `run()` (stdio transport); builds
                      the MCP object on import, starts no transport
@@ -27,7 +28,8 @@ src/aletheia_mcp/
     server.py        loopback uvicorn in a daemon thread, started on demand
     app.py           Starlette app (the /review page and its API)
   settings.py        pydantic-settings, `ALETHEIA_*` env vars
-  setup.py           install_hook: writes .vibe/hooks.toml + hook script
+  setup.py           install: merges the Vibe config.toml + AGENTS.md;
+                     install_hook: the legacy reminder hook
   webui/dist/        built React/Codemirror GUI, committed into the wheel
 ```
 
@@ -109,30 +111,44 @@ edit(file_path="/repo/src/new_file.py", old_string="", new_string="print('hi')\n
 ```
 
 Vibe exposes MCP tools prefixed with the server name, so `edit` appears as
-`aletheia_edit`. Hosts disable both built-ins (`disabled_tools = ["edit",
-"write_file"]`, see the README setup); this is the primary enforcement
-mechanism, with the reminder hook (below) as a best-effort fallback for the
-remaining channels (shell commands, other MCP servers).
+`aletheia_edit`. `aletheia setup` disables both built-ins
+(`disabled_tools = ["edit", "write_file"]`, see the README setup) and adds
+the editing policy to `AGENTS.md`; together these are the primary
+enforcement mechanism, with the legacy reminder hook (below) as a
+best-effort fallback for the remaining channels (shell commands, other MCP
+servers).
 
-## Vibe hook placement
+## Vibe setup
 
-`aletheia setup` installs a `post_tool` hook (`.vibe/hooks.toml` +
-`.vibe/hooks/aletheia_baseline.py`) matching `re:edit|write_file`. The
-project-level hook is written to the `.vibe/` of the **git repository root**,
-not the current directory, because Vibe trusts and loads project
-configuration from the repository root (the same placement rule epinoia
-applies to `.opencode/` files). `setup` resolves the git root of the given
-directory and reports where it installed. Installation is merge-safe and
+`aletheia setup` applies the README's three steps to `.vibe/config.toml` and
+`.vibe/AGENTS.md`:
+
+- registers the `aletheia` stdio MCP server (`[[mcp_servers]]`), choosing
+the `uvx` launch variant when `setup` itself ran under `uvx` (`.../archive-v0/`
+interpreter) and the installed `aletheia` script otherwise;
+- adds `edit` and `write_file` to `disabled_tools` without dropping other
+entries;
+- appends the editing policy to `AGENTS.md` between
+`<!-- aletheia:begin ... -->` / `<!-- aletheia:end -->` markers.
+
+By default it targets the **git repository root**, not the current
+directory, because Vibe walks `AGENTS.md` up to the trusted folder's root
+and loads project configuration from there (the same placement rule epinoia
+applies to `.opencode/` files). With `--global` it targets `~/.vibe`.
+Editing uses tomlkit so unrelated keys, comments and prose are preserved;
+every operation is idempotent, and a `config.toml` that is not valid TOML
+is refused rather than rewritten.
+
+### Legacy reminder hook
+
+`aletheia setup --legacy-hook` installs a `post_tool` hook
+(`.vibe/hooks.toml` + `.vibe/hooks/aletheia_baseline.py`) matching
+`re:edit|write_file`. It is best-effort coaching: it runs in its own
+process, cannot inspect the server's in-memory baseline, and only asks the
+agent to record what it changed, so it works markedly worse than disabling
+the built-ins — keep it only for the channels that disabling cannot close
+(shell commands, other MCP servers). Installation is merge-safe and
 idempotent (keyed on the unique hook name `aletheia-baseline`).
-
-The hook is best-effort coaching: it runs in its own process and cannot
-inspect the server's in-memory baseline, so it makes a skipped baseline a
-visible agent mistake rather than a silent one. It is the **fallback**
-enforcement mechanism: disabling the built-in `edit` and `write_file`
-tools (README setup, step 2) is stronger — changes then can only flow
-through Aletheia's baseline-aware `edit` tool, which records the baseline
-in the same call. Keep the hook for the channels that disabling cannot
-close (shell commands, other MCP servers).
 
 ## Build and check
 
@@ -147,8 +163,9 @@ make test      # pytest (unit + real-server end-to-end)
 make run       # run the aletheia CLI from the checkout (`uv run aletheia`)
 ```
 
-Running without the checkout: `uvx --from aletheia aletheia` (once
-published).
+Running without the checkout: `uvx --from epinoia-aletheia aletheia` (once
+published; the distribution is `epinoia-aletheia` because `aletheia` is
+taken on PyPI, the console script is still `aletheia`).
 
 ### The web UI
 

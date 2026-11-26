@@ -9,7 +9,7 @@ from aletheia_mcp.server import mcp
 
 
 def test_version() -> None:
-    assert pkg_version("aletheia")
+    assert pkg_version("epinoia-aletheia")
 
 
 def test_console_script_registered() -> None:
