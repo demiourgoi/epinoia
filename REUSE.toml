@@ -120,6 +120,7 @@ SPDX-License-Identifier = "CC-BY-4.0"
 # web UI sources, and its PDD planning and review records.
 [[annotations]]
 path = [
+    "aletheia/AGENTS.md",
     "aletheia/LICENSE",
     "aletheia/.agents/planning/aletheia/design/detailed-design-review-rev1.md",
     "aletheia/.agents/planning/aletheia/design/detailed-design-review-rev2.md",
@@ -155,6 +156,15 @@ path = [
     "aletheia/.agents/planning/aletheia/design/detailed-design-v3-review-rev1.md",
     "aletheia/.agents/planning/aletheia/design/detailed-design-v3-review-rev2.md",
     "aletheia/.agents/planning/aletheia/summary.md",
+    "aletheia/.agents/summary/architecture.md",
+    "aletheia/.agents/summary/codebase_info.md",
+    "aletheia/.agents/summary/components.md",
+    "aletheia/.agents/summary/data_models.md",
+    "aletheia/.agents/summary/dependencies.md",
+    "aletheia/.agents/summary/index.md",
+    "aletheia/.agents/summary/interfaces.md",
+    "aletheia/.agents/summary/review_notes.md",
+    "aletheia/.agents/summary/workflows.md",
     "aletheia/.gitignore",
     "aletheia/.python-version",
     "aletheia/CONTRIBUTING.md",
