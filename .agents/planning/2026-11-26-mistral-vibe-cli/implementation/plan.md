@@ -194,3 +194,16 @@ out of CI because they need opencode credentials and spend model tokens; the
 workflow header records that. The exact command sequences were verified
 green in this environment before being encoded. The step-3-4 review
 (step-3-4-review-rev1) verdict: Ship.
+
+## PR review round (juanrh, on PR #4)
+
+The pre-merge review found no must-fix items. Should-fix 1 is adopted: the
+install suite gained a "skill registry completeness" group asserting both
+directions — every skills/ directory appears in the Makefile's SKILLS, and
+the suite's own list equals the Makefile's — so an unlisted new skill or a
+drifting test list fails the suite (verified by inserting a fake skill and
+watching the test fail). Nice-to-have 2 (unpinned opencode in CI) was
+resolved by the merged CI PR, which replaced the npm install with a no-op
+stub. Nice-to-have 3 (job label vs. working-directory mismatch) is fixed in
+the same round: the aletheia job is now labeled "Aletheia pytest suite
+(make test in aletheia/)".

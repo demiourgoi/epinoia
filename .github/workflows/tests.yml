@@ -44,7 +44,7 @@ jobs:
         run: make test
 
   aletheia:
-    name: Aletheia (make -C aletheia test)
+    name: Aletheia pytest suite (make test in aletheia/)
     runs-on: ubuntu-latest
     defaults:
       run:
