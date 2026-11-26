@@ -39,6 +39,7 @@ path = [
     "tests/run.sh",
     "tests/lib.sh",
     "tests/test-install.sh",
+    "tests/skills/agent-sop-author/test-validate-skill.sh",
     "tests/skills/ponytail-review-pdd/lib.sh",
     "tests/skills/ponytail-review-pdd/test-run-review.sh",
     "tests/skills/ponytail-review-pdd/test-compute-diff.sh",
