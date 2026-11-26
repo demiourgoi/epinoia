@@ -2,7 +2,7 @@
 
 ## Checklist
 
-- [ ] Step 1: Create the `mistral-vibe-cli` skill and validate it
+- [x] Step 1: Create the `mistral-vibe-cli` skill and validate it
 - [ ] Step 2: Make the Makefile install target install the skill explicitly
 - [ ] Step 3: Final verification and compliance
 
@@ -93,3 +93,20 @@ runs the gates; functional gaps found here go back to Steps 1–2.
 
 **Demo:** All gates green in one pass; `git status` clean apart from the
 PDD artifacts.
+
+## Step 1: Implementation notes
+
+Implemented `skills/mistral-vibe-cli/SKILL.md` (296 lines) with the
+spec-compliant frontmatter (`name`, `description`, `license: MIT`,
+`compatibility`, `metadata` with author/version) and the SOP body. The seven
+steps, pitfalls, examples, and troubleshooting sections follow the design
+without deviation. Two reviewer-caught fixes during self-review before
+committing: the parallel-worktree example first showed an invalid
+invocation (`--prompt` without a value after a positional prompt), corrected
+to `vibe "prompt" --worktree NAME`; and negative constraints were reworded so
+the validator's same-line-context heuristic stops warning (all MUST NOT
+bullets now carry "because" on the constraint line). Validation:
+`validate-skill.sh skills/mistral-vibe-cli` exits 0 with zero warnings,
+including the `skills-ref` Agent Skills specification check. Demo: a temp
+`make install` places `.agents/skills/mistral-vibe-cli/SKILL.md` (still via
+the wildcard copy until Step 2).
