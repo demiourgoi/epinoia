@@ -3,7 +3,7 @@
 ## Checklist
 
 - [x] Step 1: Create the `mistral-vibe-cli` skill and validate it
-- [ ] Step 2: Make the Makefile install target install the skill explicitly
+- [x] Step 2: Make the Makefile install target install the skill explicitly
 - [ ] Step 3: Final verification and compliance
 
 ## Working agreements
@@ -120,3 +120,19 @@ longer implies every run prints a JSON transcript; the `@path` example is
 now a concrete invocation; the `VIBE_SESSION=1` constraint is stated plainly.
 Rev2 confirms: Ship. Validation still passes with zero warnings after the
 fixes.
+
+## Step 2: Implementation notes
+
+Implemented the `SKILLS` variable (all six distributable skills, including
+`mistral-vibe-cli`), the pre-copy existence guard (exit 2, message naming
+the missing skill), the per-skill copy loop, and the expanded success echo.
+`tests/test-install.sh` gained a per-skill assertion loop and a "skill
+registry guard" group that copies this repo (sans `.git` and `.local`),
+removes one listed skill, and asserts the guarded failure, including that
+no other artifacts are copied. Deviation from the design: none; the review
+(step-2-review-rev1, verdict Ship) also cleared the echo wording change.
+Demo: `make install` prints the skill list including `mistral-vibe-cli`,
+and `make test` passes fully once `opencode` is on PATH — note the
+ponytail-review-pdd hermetic suites require the `opencode` binary even for
+dry runs; in this sandbox they failed only because the binary was absent,
+and pass with it installed.

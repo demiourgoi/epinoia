@@ -10,6 +10,13 @@ REPO_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 # `cd project && make -C this-repo install` installs into project.
 TARGET_DIR ?= $(PWD)
 
+# The distributable skills the install target copies into
+# TARGET_DIR/.agents/skills/. Every listed directory must exist under
+# skills/, so a rename or a missing skill fails the install with an explicit
+# error instead of shipping a partial set. Adding a skill means adding it here.
+SKILLS := codebase-summary edenai-zed-config mistral-vibe-cli pdd \
+	ponytail-review ponytail-review-pdd
+
 help: ## Show the available targets
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -38,13 +45,22 @@ install: ## Install skills + opencode/vibe agent config (opencode files go to th
 		echo "Error: TARGET_DIR is this repository (or resolves to it); choose the project to install into" >&2; \
 		exit 2; \
 	fi; \
+	for SKILL in $(SKILLS); do \
+		if [ ! -d "$(REPO_DIR)/skills/$$SKILL" ]; then \
+			echo "Error: listed skill directory not found: skills/$$SKILL" >&2; \
+			exit 2; \
+		fi; \
+	done; \
 	mkdir -p "$(TARGET_DIR)/.agents/skills"; \
-	cp -R "$(REPO_DIR)/skills/." "$(TARGET_DIR)/.agents/skills/"; \
+	for SKILL in $(SKILLS); do \
+		cp -R "$(REPO_DIR)/skills/$$SKILL" "$(TARGET_DIR)/.agents/skills/"; \
+	done; \
 	mkdir -p "$$AGENT_DIR/.opencode"; \
 	cp -R "$(REPO_DIR)/.opencode/." "$$AGENT_DIR/.opencode/"; \
 	mkdir -p "$(TARGET_DIR)/.vibe"; \
 	cp -R "$(REPO_DIR)/.vibe/." "$(TARGET_DIR)/.vibe/"; \
-	echo "Installed skills:         $(TARGET_DIR)/.agents/skills"; \
+	echo "Installed skills:         $(SKILLS)"; \
+	echo "Installed skills into:    $(TARGET_DIR)/.agents/skills"; \
 	echo "Installed opencode agent: $$AGENT_DIR/.opencode"; \
 	echo "Installed vibe agent:     $(TARGET_DIR)/.vibe"
 
