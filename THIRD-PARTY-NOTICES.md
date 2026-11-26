@@ -33,8 +33,11 @@ so it travels with the skill when the directory is copied elsewhere
   was renamed to `validate-skill.sh`, extended with the skills-ref
   `agentskills validate` specification check, and later rewritten in
   python3 as `validate-skill.py`, as required by the skill's own rule
-  that scripts longer than 4 lines of bash MUST be python3. Its LICENSE
-  sidecar states the modifications, as required by Apache-2.0 §4(b).
+  that scripts longer than 4 lines of bash MUST be python3, and a uv
+  project skeleton (adapted from Harold's `harold-mcp/pyproject.toml`,
+  without authors) was added under `assets/uv-project-skeleton/`. Its
+  LICENSE sidecar states the modifications, as required by Apache-2.0
+  §4(b).
 
 ### Upstream NOTICE file (verbatim, per Apache-2.0 §4(d))
 
