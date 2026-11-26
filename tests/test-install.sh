@@ -62,10 +62,40 @@ assert_exists "$PKG/.vibe/config.toml" "reinstall keeps the vibe config in place
 group "install target: every listed skill installs"
 
 # The SKILLS list in the Makefile is the contract: each of its entries must
-# land as a SKILL.md in the target.
-for SKILL in codebase-summary edenai-zed-config mistral-vibe-cli pdd \
-    ponytail-review ponytail-review-pdd; do
+# land as a SKILL.md in the target. SKILLS_LIST mirrors the Makefile's list
+# and is compared against it below, so the two cannot drift apart silently.
+SKILLS_LIST="codebase-summary edenai-zed-config mistral-vibe-cli pdd ponytail-review ponytail-review-pdd"
+
+for SKILL in $SKILLS_LIST; do
     assert_exists "$PKG/.agents/skills/$SKILL/SKILL.md" "installs the listed skill $SKILL"
+done
+
+group "install target: skill registry completeness"
+
+# The Makefile installs only the skills SKILLS lists, so an unlisted skills/
+# directory would be silently dropped. Assert both directions: every
+# directory in skills/ appears in the Makefile's SKILLS variable, and this
+# suite's SKILLS_LIST matches it exactly.
+SKILLS_MAKE="$(awk '
+    /^SKILLS :=/ { collect = 1; sub(/^SKILLS :=[ \t]*/, ""); acc = $0; next }
+    collect && /^[ \t]/ { acc = acc " " $0; next }
+    collect { collect = 0 }
+    END { gsub(/\\/, "", acc); print acc }
+' "$REPO_ROOT/Makefile" | tr -s "[:space:]" " " | sed "s/^ //; s/ $//")"
+
+assert_nonempty "$REPO_ROOT/Makefile" "the Makefile defines a SKILLS variable"
+if [ "$SKILLS_MAKE" = "$SKILLS_LIST" ]; then
+    ok "the suite's skill list matches the Makefile's SKILLS"
+else
+    fail "the suite's skill list matches the Makefile's SKILLS (suite: $SKILLS_LIST; makefile: $SKILLS_MAKE)"
+fi
+
+for SKILL_DIR in "$REPO_ROOT"/skills/*/; do
+    SKILL_NAME="$(basename "$SKILL_DIR")"
+    case " $SKILLS_MAKE " in
+        *" $SKILL_NAME "*) ok "the skills/ directory $SKILL_NAME is listed in SKILLS" ;;
+        *) fail "the skills/ directory $SKILL_NAME is listed in SKILLS" ;;
+    esac
 done
 
 group "install target: skill registry guard"
