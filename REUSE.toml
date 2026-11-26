@@ -32,6 +32,7 @@ path = [
     ".vibe/hooks.toml",
     ".vibe/hooks/aletheia_baseline.py",
     "skills/edenai-zed-config/SKILL.md",
+    ".github/workflows/tests.yml",
     "skills/ponytail-review-pdd/SKILL.md",
     "skills/ponytail-review-pdd/scripts/compute-diff.sh",
     "skills/ponytail-review-pdd/scripts/run-review.sh",
