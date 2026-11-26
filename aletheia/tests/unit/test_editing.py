@@ -141,6 +141,77 @@ def test_contains_resolution(tmp_path: Path) -> None:
     assert not contains(root, root.parent)
 
 
+def test_create_file_registers_creation_marker(service: ReviewService, tmp_path: Path) -> None:
+    f = tmp_path / "new.py"
+    result = service.edit_file("new.py", "", "print('hi')\n")
+    assert result["created"] is True
+    assert result["file"] == str(f)
+    assert result["baseline_registered"] is True
+    assert f.read_text() == "print('hi')\n"
+    assert service.baselines.get(f).content is None  # creation marker: rejecting deletes the file
+
+
+def test_create_then_reject_deletes_file(service: ReviewService, tmp_path: Path) -> None:
+    f = tmp_path / "new.py"
+    service.edit_file("new.py", "", "body\n")
+    service.rollback_to_baseline([str(f)])
+    assert not f.exists()
+    assert len(service.baselines) == 0
+
+
+def test_create_then_edit_keeps_creation_marker(service: ReviewService, tmp_path: Path) -> None:
+    f = tmp_path / "new.py"
+    service.edit_file("new.py", "", "one\n")
+    result = service.edit_file("new.py", "one", "two")
+    assert result["baseline_registered"] is False
+    assert service.baselines.get(f).content is None
+    assert f.read_text() == "two\n"
+
+
+def test_create_with_empty_content_rejected(service: ReviewService, tmp_path: Path) -> None:
+    with pytest.raises(EditFailedError, match="must not be empty when creating a file"):
+        service.edit_file("empty.py", "", "")
+    assert not (tmp_path / "empty.py").exists()
+    assert len(service.baselines) == 0
+
+
+def test_create_rejected_when_old_string_not_empty(service: ReviewService, tmp_path: Path) -> None:
+    with pytest.raises(EditFailedError, match="To create it"):
+        service.edit_file("new.py", "old", "new")
+    assert not (tmp_path / "new.py").exists()
+    assert len(service.baselines) == 0
+
+
+def test_empty_old_string_on_existing_file_rejected(service: ReviewService, tmp_path: Path) -> None:
+    f = tmp_path / "a.txt"
+    f.write_text("hello\n")
+    with pytest.raises(EditFailedError, match="must not be empty when the file exists"):
+        service.edit_file("a.txt", "", "X")
+    assert f.read_text() == "hello\n"
+    assert len(service.baselines) == 0
+
+
+def test_create_failure_never_registers_baseline(
+    service: ReviewService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(_path: Path, _content: str) -> None:
+        raise PermissionError("read-only")
+
+    monkeypatch.setattr("aletheia_mcp.review.disk.write_text", fail)
+    with pytest.raises(DiskEffectError, match="create"):
+        service.edit_file("new.py", "", "body\n")
+    assert len(service.baselines) == 0
+
+
+def test_create_trusted_root_confinement(service: ReviewService, tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-new.py"
+    try:
+        with pytest.raises(OutsideTrustedRootError, match="outside the trusted project root"):
+            service.edit_file(f"../{outside.name}", "", "body\n")
+    finally:
+        assert not outside.exists()
+
+
 def test_apply_edit_direct(tmp_path: Path) -> None:
     store = BaselineStore()
     f = tmp_path / "dir" / "a.py"

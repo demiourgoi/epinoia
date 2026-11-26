@@ -1,10 +1,13 @@
-"""Baseline-aware exact-string edits: the trusted-root check and the edit
-operation behind the `edit` MCP tool.
+"""Baseline-aware file changes: the trusted-root check and the operations
+behind the `edit` MCP tool (exact-string edits of existing files and
+whole-file creation of new ones).
 
-The tool mirrors the Vibe built-in edit tool's input schema and the
-pydantic AI harness `FileSystem.edit_file` semantics, and adds the
-automatic baseline registration that keeps Aletheia's review honest even
-when the agent never calls `record_baseline` itself.
+The tool covers the union of the Vibe built-in `edit` and `write_file`
+tools: it edits existing files with the pydantic AI harness
+`FileSystem.edit_file` semantics and creates a missing file when
+`old_string` is empty. It adds the automatic baseline registration that
+keeps Aletheia's review honest even when the agent never calls
+`record_baseline` itself.
 """
 
 from __future__ import annotations
@@ -50,37 +53,38 @@ def apply_edit(
     new_string: str,
     replace_all: bool = False,
 ) -> dict[str, object]:
-    """Apply an exact-string edit, registering the baseline automatically.
+    """Apply an exact-string edit or a whole-file creation, registering the
+    baseline automatically.
 
     Evaluation order (no side effects on failure): trusted-root check →
-    read and validate → baseline registration (pre-edit content, only if
-    absent) → atomic write. Mirrors the built-in edit tool's `EditArgs`
-    and returns a result shaped like its `EditResult` (plus the review
-    bookkeeping).
+    read and validate → baseline registration (pre-change content, only
+    if absent) → atomic write. Mirrors the built-in edit/write_file tools'
+    input schema and returns a result shaped like their results (plus the
+    review bookkeeping).
     """
     resolved = Path(file_path).expanduser()
     resolved = (root / resolved) if not resolved.is_absolute() else resolved
     resolved = resolved.resolve()
     if not contains(root, resolved):
         msg = (
-            f"Refusing to edit {str(resolved)!r}: it is outside the trusted project root "
-            f"{str(root)!r}. Edit files inside the project."
+            f"Refusing to change {str(resolved)!r}: it is outside the trusted project root "
+            f"{str(root)!r}. Change files inside the project."
         )
         raise OutsideTrustedRootError(msg)
 
-    if old_string == new_string:
-        msg = "new_string must be different from old_string."
-        raise EditFailedError(msg)
-    if not old_string:
-        msg = "old_string must not be empty; it would match between every character."
-        raise EditFailedError(msg)
-
     current = read_text_or_none(resolved)  # rejects directories and non-UTF-8
     if current is None:
+        return _create_file(store=store, resolved=resolved, old_string=old_string, content=new_string)
+
+    if not old_string:
         msg = (
-            f"{str(resolved)!r} does not exist. This tool edits existing files; create the file "
-            "first (and start its review with record_baseline when you plan to review it)."
+            "old_string must not be empty when the file exists; an empty old_string would match "
+            'between every character. To create a file, pass old_string="" only when it does '
+            "not exist yet."
         )
+        raise EditFailedError(msg)
+    if old_string == new_string:
+        msg = "new_string must be different from old_string."
         raise EditFailedError(msg)
 
     occurrences = current.count(old_string)
@@ -94,22 +98,64 @@ def apply_edit(
         )
         raise EditFailedError(msg)
 
-    baseline_registered = resolved not in store.paths()
-    if baseline_registered:
-        store.record([resolved])  # pre-edit content anchors the review round
-
-    updated = current.replace(old_string, new_string) if replace_all else current.replace(old_string, new_string, 1)
-    try:
-        disk.write_text(resolved, updated)
-    except OSError as error:
-        if baseline_registered:
-            store.remove([resolved])  # the file was never edited: no phantom review entry
-        raise DiskEffectError(str(resolved), "edit") from error
+    baseline_registered = _write_with_baseline(
+        store=store,
+        resolved=resolved,
+        content=(
+            current.replace(old_string, new_string) if replace_all else current.replace(old_string, new_string, 1)
+        ),
+        action="edit",
+    )
     message = f"Replaced {occurrences if replace_all else 1} occurrence(s) in {resolved!s}."
     return {
         "file": str(resolved),
         "message": message,
+        "created": False,
         "old_string": old_string,
         "new_string": new_string,
         "baseline_registered": baseline_registered,
     }
+
+
+def _create_file(*, store: BaselineStore, resolved: Path, old_string: str, content: str) -> dict[str, object]:
+    """Create `resolved` with the full `content` (write_file semantics).
+
+    The baseline entry becomes a creation marker (the file's pre-change
+    state: nonexistent), so the diff shows the whole file as created and
+    rejecting the change deletes it.
+    """
+    if old_string:
+        msg = (
+            f'{str(resolved)!r} does not exist. To create it, pass old_string="" and '
+            "new_string with the full file content."
+        )
+        raise EditFailedError(msg)
+    if not content:
+        msg = "new_string must not be empty when creating a file."
+        raise EditFailedError(msg)
+    baseline_registered = _write_with_baseline(store=store, resolved=resolved, content=content, action="create")
+    return {
+        "file": str(resolved),
+        "message": f"Created {resolved!s}.",
+        "created": True,
+        "baseline_registered": baseline_registered,
+    }
+
+
+def _write_with_baseline(*, store: BaselineStore, resolved: Path, content: str, action: str) -> bool:
+    """Register the pre-change baseline when absent, then write atomically.
+
+    Shared by the edit and create operations. On write failure the freshly
+    registered entry is removed so a never-changed file never appears
+    under review.
+    """
+    baseline_registered = resolved not in store.paths()
+    if baseline_registered:
+        store.record([resolved])  # pre-change state anchors the review round
+    try:
+        disk.write_text(resolved, content)
+    except OSError as error:
+        if baseline_registered:
+            store.remove([resolved])  # the file was never changed: no phantom review entry
+        raise DiskEffectError(str(resolved), action) from error
+    return baseline_registered

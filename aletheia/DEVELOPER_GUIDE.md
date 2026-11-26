@@ -21,8 +21,8 @@ src/aletheia_mcp/
     baselines.py     BaselineStore: thread-safe path -> pre-edit snapshot
     diffs.py         unified_diff / has_text_change helpers
     disk.py          disk read/write/delete with clear errors
-    editing.py       apply_edit: baseline-aware edit tool, trusted-root
-                     confinement
+    editing.py       apply_edit: baseline-aware edit tool (exact-string
+                     edit + file creation), trusted-root confinement
   web/
     server.py        loopback uvicorn in a daemon thread, started on demand
     app.py           Starlette app (the /review page and its API)
@@ -73,14 +73,25 @@ edit(file_path, old_string, new_string, replace_all=False) -> str  # opt-in
 ### Opt-in `edit` tool
 
 Agents tend to skip `record_baseline` even with the hook. The optional
-**`edit`** tool is a drop-in replacement for the built-in edit tool — same
-schema and semantics as Vibe's (absolute `file_path`, exact `old_string` →
-`new_string`, unique match unless `replace_all`, `new_string` must differ) —
+**`edit`** tool is a drop-in replacement for the built-in edit **and
+write_file** tools, selected by whether the target file exists:
+
+- **existing file — edit semantics**: absolute or project-relative
+  `file_path`, exact `old_string` → `new_string` replacement, unique match
+  unless `replace_all`, `new_string` must differ from `old_string`;
+- **missing file — creation semantics** (`write_file`): pass `old_string=""`
+  and `new_string` with the full file content (non-empty; an empty file has
+  nothing to review); `replace_all` is ignored. The parent directory must
+  exist — the server never creates directories.
+
 plus:
 
-- **automatic baseline**: the first edit of a file records its pre-edit
-  content as the review baseline (never re-anchored; repeated edits stay in
-  the same round; no baseline side effects when an edit fails);
+- **automatic baseline**: the first change of a file records its pre-change
+  state as the review baseline (never re-anchored; repeated changes stay in
+  the same round; no baseline side effects when a change fails). A created
+  file gets a **creation-marker** baseline, exactly as `record_baseline` on
+  a missing path: the diff shows the whole file as created, and rejecting
+  the change deletes the file;
 - **trusted-root confinement**: `file_path` (after resolving symlinks) must
   stay inside the trusted root — the git repository root of the working
   directory at server start (falling back to it) — matching the Vibe CLI
@@ -89,12 +100,19 @@ plus:
 
 ```text
 edit(file_path="/repo/src/main.py", old_string="x = 1", new_string="x = 2")
-→ {"file": "...", "message": "edited", "baseline_registered": true,
-   "old_string": "x = 1", "new_string": "x = 2", "url": "http://127.0.0.1:53412/review"}
+→ {"file": "...", "message": "Replaced 1 occurrence(s) ...", "created": false,
+   "old_string": "x = 1", "new_string": "x = 2", "baseline_registered": true,
+   "url": "http://127.0.0.1:53412/review"}
+edit(file_path="/repo/src/new_file.py", old_string="", new_string="print('hi')\n")
+→ {"file": "...", "created": true, "message": "Created ...",
+   "baseline_registered": true, "url": "http://127.0.0.1:53412/review"}
 ```
 
 Vibe exposes MCP tools prefixed with the server name, so `edit` appears as
-`aletheia_edit`.
+`aletheia_edit`. Hosts disable both built-ins (`disabled_tools = ["edit",
+"write_file"]`, see the README setup); this is the primary enforcement
+mechanism, with the reminder hook (below) as a best-effort fallback for the
+remaining channels (shell commands, other MCP servers).
 
 ## Vibe hook placement
 
@@ -109,7 +127,12 @@ idempotent (keyed on the unique hook name `aletheia-baseline`).
 
 The hook is best-effort coaching: it runs in its own process and cannot
 inspect the server's in-memory baseline, so it makes a skipped baseline a
-visible agent mistake rather than a silent one.
+visible agent mistake rather than a silent one. It is the **fallback**
+enforcement mechanism: disabling the built-in `edit` and `write_file`
+tools (README setup, step 2) is stronger — changes then can only flow
+through Aletheia's baseline-aware `edit` tool, which records the baseline
+in the same call. Keep the hook for the channels that disabling cannot
+close (shell commands, other MCP servers).
 
 ## Build and check
 

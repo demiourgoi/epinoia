@@ -85,35 +85,55 @@ command = "uvx"
 args = ["--from", "aletheia", "aletheia"]
 ```
 
-### 2. Install the baseline-reminder hook
+### 2. Forbid the built-in edit and write_file tools (recommended)
 
-The hook nudges the agent to record files before editing, so reviews are not
-missed:
+Aletheia's baseline-aware **`edit`** tool replaces Vibe's **built-in `edit`
+and `write_file` together**: it edits existing files (exact `old_string` →
+`new_string` replacement) and creates new ones from scratch (`old_string`
+empty, `new_string` the full content). Every change through it records the
+review baseline automatically in the same call — an edit made this way
+**cannot** skip the baseline, so nothing you would want to review goes
+unreviewed.
+
+Making it the only path is what actually enforces that, and it is more
+effective than the reminder hook of step 3: the hook only *nudges* the
+agent after an edit already happened (best-effort coaching that cannot
+inspect the baseline), while disabling the built-ins leaves the agent no
+way to change a file except through Aletheia. Forbid both built-ins in the
+same `config.toml`:
+
+```toml
+disabled_tools = ["edit", "write_file"]
+# or, equivalently:
+[tools.edit]
+permission = "never"
+[tools.write_file]
+permission = "never"
+```
+
+Vibe prefixes MCP tools with the server name, so Aletheia's tool appears
+as `aletheia_edit` and is not affected by `disabled_tools`. These keys also
+work in a custom agent file (`.vibe/agents/<name>.toml`) to scope the
+restriction to one agent.
+
+"Force edits through Aletheia" is not strictly required — the agent can
+also call `record_baseline` by hand before editing with its own tools —
+but it is the reliable setup and the one this README recommends.
+
+### 3. Optionally install the reminder hook (fallback)
+
+The hook still earns its keep for the change channels step 2 cannot close
+(shell commands, other MCP servers): it nudges the agent to record files
+after it edits them by other means, so reviews are not missed:
 
 ```console
 aletheia setup            # project-level (this repository)
 aletheia setup --global   # user-level (~/.vibe/)
 ```
 
-Run `aletheia setup` from inside the project you want to protect; it reports
-where it installed the hook.
-
-### 3. Optionally force edits through Aletheia
-
-To make the agent edit *only* through Aletheia's baseline-aware edit tool,
-forbid Vibe's built-in one in the same `config.toml`:
-
-```toml
-disabled_tools = ["edit"]
-# or, equivalently:
-[tools.edit]
-permission = "never"
-```
-
-These keys also work in a custom agent file (`.vibe/agents/<name>.toml`) to
-scope the restriction to one agent. Keeping the reminder hook from step 2 is
-still worthwhile: it also covers other ways an agent can change files
-(`write_file`, shell commands).
+Run `aletheia setup` from inside the project you want to protect; it
+reports where it installed the hook. The hook is best-effort coaching, so
+keep step 2 as the primary mechanism.
 
 ## Using Aletheia with other MCP hosts
 

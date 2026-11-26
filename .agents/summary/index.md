@@ -21,7 +21,7 @@ This directory is the detailed knowledge base for the `epinoia` repository. It i
 | `components.md` | Every component, its responsibility, and its key files | You need to find where a behavior lives |
 | `interfaces.md` | CLI flags, exit codes, stdout/stderr contracts, agent/config/file interfaces, environment variables | You are changing a command, config, or agent contract |
 | `data_models.md` | Skill frontmatter, PDD artifacts, review artifacts, permissions, Vibe config, compliance metadata, test harness model | You need the exact shape of a file or record |
-| `workflows.md` | Install, PDD lifecycle, PDD review, skill authoring, compliance, tests, Vibe review | You need the order of operations or a sequence diagram |
+| `workflows.md` | Install, PDD lifecycle, PDD review, skill authoring, compliance, tests, Vibe review, aletheia change review | You need the order of operations or a sequence diagram |
 | `dependencies.md` | Required and optional tools, models, uvx tooling, third-party inventory, portability notes | You need to know what must be installed or what a change may break |
 | `review_notes.md` | Consistency findings, coverage gaps, recommendations | You need to know what is verified, what is not, and what to improve |
 
@@ -57,6 +57,8 @@ graph TB
 | Where is the default review model defined? | `interfaces.md`, `dependencies.md` |
 | What does a review file or diff file look like? | `data_models.md` |
 | How do I add or validate a skill? | `workflows.md`, `.agents/skills/agent-sop-author/SKILL.md` |
+| What is the aletheia MCP server, and how do agents review changes with it? | `codebase_info.md`, `components.md`, `workflows.md` (section 8) |
+| How does the aletheia `edit` tool create files, and which built-in tools does it replace? | `interfaces.md`, `components.md` |
 | How do I record third-party content? | `workflows.md`, `.agents/skills/update-third-party-notices/SKILL.md` |
 | Which tests cover a change, and what is missing? | `review_notes.md` |
 | What external tools or licenses are involved? | `dependencies.md` |

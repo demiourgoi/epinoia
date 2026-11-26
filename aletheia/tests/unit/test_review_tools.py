@@ -117,6 +117,30 @@ def test_edit_tool_full_agent_loop_without_record_baseline(fresh_service: Review
     assert a.read_text() == "one\ntwo\n"
 
 
+def test_edit_tool_creates_file_without_record_baseline(fresh_service: ReviewService, tmp_path: Path) -> None:
+    created = _call_json(
+        "edit",
+        {"file_path": "draft.md", "old_string": "", "new_string": "# draft\n"},
+    )
+    assert created["created"] is True
+    assert created["baseline_registered"] is True
+    draft = Path("draft.md").resolve()
+    assert draft.read_text() == "# draft\n"
+
+    status = _call_json("get_change_status", {})
+    assert status["files_in_baseline"] == 1
+    file = status["files"][0]
+    assert file["path"] == str(draft)
+    assert file["kind"] == "created"
+
+    rejected = _call_json("rollback_to_baseline", {"paths": ["draft.md"]})
+    assert rejected["files_in_baseline"] == 0
+    assert not draft.exists()
+
+    with pytest.raises(ToolError):
+        _call("edit", {"file_path": "draft.md", "old_string": "old", "new_string": "new"})
+
+
 def test_edit_tool_ambiguous_match_is_tool_error(fresh_service: ReviewService, tmp_path: Path) -> None:
     a = Path("dup.py").resolve()
     a.write_text("a\na\n")

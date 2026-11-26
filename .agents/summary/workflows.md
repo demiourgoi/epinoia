@@ -120,3 +120,28 @@ Hermetic suites must not touch the network, spend tokens, or write outside `.loc
 4. Read-only enforcement comes from the agent instructions plus `[tools.bash]`/`[tools.write_file]` permissions.
 
 The Vibe path is independent of `run-review.sh` and does not produce revision-numbered review files or a `.log` transcript; it is a manual alternative to the opencode orchestration.
+
+## 8. Review agent changes with aletheia
+
+```mermaid
+sequenceDiagram
+    participant Agent as Coding agent (MCP host)
+    participant Al as Aletheia MCP (stdio)
+    participant FS as Working directory
+    participant GUI as Review GUI (loopback HTTP)
+    participant U as User
+
+    Agent->>Al: record_baseline(paths)
+    Al->>FS: snapshot pre-change content
+    Al-->>Agent: url + recorded / marked_for_creation
+    Agent->>Al: edit(...) ; edit("new.py", "", content)
+    Al->>FS: atomic write; automatic baseline on first change
+    Agent->>U: shows the constant review url
+    U->>GUI: reviews live diffs at /review
+    U->>GUI: approve (adopt) / save-edit / reject (rollback)
+    GUI->>FS: baseline content restored for rejected files (created files deleted)
+    Agent->>Al: get_change_status()
+    Al-->>Agent: live drift; decided files gone
+```
+
+Recommended host setup: add the `aletheia` stdio MCP server and set `disabled_tools = ["edit", "write_file"]` so every file change (edit *and* creation) flows through the baseline-aware `edit` tool. The reminder hook from `aletheia setup` covers the remaining side channels (shell commands).

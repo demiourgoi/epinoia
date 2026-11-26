@@ -68,20 +68,28 @@ def rollback_to_baseline(paths: list[str]) -> str:
 
 @mcp.tool
 def edit(file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> str:
-    """Edit a file with an exact string replacement, registering the review
-    baseline automatically.
+    """Edit an existing file by exact string replacement, or create a new
+    file from scratch with the full content, registering the review
+    baseline automatically. Replaces both your built-in edit and
+    write_file tools.
 
-    Same schema and semantics as your built-in edit tool: file_path
-    (absolute or project-relative), old_string must match exactly once
-    (more context makes it unique) unless replace_all=true, new_string
-    differs from old_string. Additionally: the pre-edit content of the
-    file is recorded in the review baseline on its first edit through
-    this tool, so every change stays reviewable in the Aletheia web UI
-    (record_baseline happens in the same call; you never skip it by
-    accident). Only files inside the trusted project root can be edited;
-    each result includes the review URL to share with the user.
+    file_path: absolute or project-relative. When the file exists: edit
+    semantics — old_string must match exactly once (more context makes it
+    unique) unless replace_all=true, and new_string differs from
+    old_string. When the file does not exist: create (write_file)
+    semantics — pass old_string="" and new_string with the full file
+    content (non-empty); replace_all is ignored.
 
-    Returns JSON {"file", "message", "old_string", "new_string",
-    "baseline_registered", "url"}.
+    Additionally: the pre-change state of the file is recorded in the
+    review baseline on its first change through this tool (existing files
+    as content, created files as creation markers, so rejecting a
+    created file deletes it), so every change stays reviewable in the
+    Aletheia web UI (record_baseline happens in the same call; you never
+    skip it by accident). Only files inside the trusted project root can
+    be changed; each result includes the review URL to share with the
+    user.
+
+    Returns JSON {"file", "message", "created", "baseline_registered",
+    "url"} (edits also include "old_string" and "new_string").
     """
     return json.dumps(get_service().edit_file(file_path, old_string, new_string, replace_all))

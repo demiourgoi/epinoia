@@ -140,6 +140,27 @@ Tool blocks:
 - `[tools.bash]` — `permission = "ask"`, an allowlist of read-only discovery commands, and a denylist that blocks mutation and file-slicing/search commands (`cat`, `grep`, `sed`, `awk`, `rm`, …).
 - `[tools.write_file]` — `permission = "ask"`, allowlist `**/.review.md`, `outside_workdir = "deny"`.
 
+### aletheia MCP contract (subproject `aletheia/`)
+
+Five stdio MCP tools (JSON string results; every baseline-related result carries the live review `url`):
+
+| Tool | Contract |
+| --- | --- |
+| `record_baseline(paths)` | Snapshot pre-change content; missing files become creation markers; starts the loopback review server on first use |
+| `get_change_status()` | Live drift poll: one read per baseline path, no contents in the payload |
+| `remove_from_baseline(paths)` | Approve: adopt the working directory, end review |
+| `rollback_to_baseline(paths)` | Reject: restore baseline content atomically (delete created files), end review |
+| `edit(file_path, old_string, new_string, replace_all=False)` | Exact-string edit of existing files (unique match unless `replace_all`; `new_string` must differ) **or whole-file creation when the file does not exist and `old_string` is empty**; parent directories are never created; trusted-root confinement (git root of the CWD at server start); automatic baseline registration on first change |
+
+Host configuration (Vibe `config.toml`): add the `[[mcp_servers]]` stdio entry (`uvx --from aletheia aletheia`) and force file changes through the tool with
+
+```toml
+disabled_tools = ["edit", "write_file"]
+# or: [tools.edit] permission = "never" + [tools.write_file] permission = "never"
+```
+
+Vibe prefixes MCP tools with the server name (`aletheia_edit`), so the built-ins can be disabled without touching it. Web API: `GET /api/review` (full payload), `GET /api/status`, `POST /api/approve|/api/reject|/api/save-edit`.
+
 ### Vibe model preset contract
 
 `.vibe/config.toml` declares one `[[models]]` entry: `name = "zai-glm-5-3"`, `provider = "mistral"`, `alias = "reviewer"`, `thinking = "max"`, `max_context_length = 1000000`, `auto_compact_threshold = 800000`. The agent references the alias, not the model name.

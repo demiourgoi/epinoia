@@ -114,7 +114,8 @@ class ReviewService:
             raise DiskEffectError(str(resolved[0]), "save_edit") from error
 
     def edit_file(self, file_path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict[str, Any]:
-        """Baseline-aware exact-string edit (the `edit` MCP tool)."""
+        """Baseline-aware exact-string edit or file creation (the `edit`
+        MCP tool, covering the built-in edit and write_file tools)."""
         result = editing.apply_edit(
             root=self.trusted_root,
             store=self.baselines,

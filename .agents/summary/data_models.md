@@ -110,6 +110,21 @@ Model preset (`.vibe/config.toml`):
 | `max_context_length` | `1000000` | Context window used for compaction |
 | `auto_compact_threshold` | `800000` | Input-token count that triggers compaction |
 
+## aletheia baseline (subproject)
+
+One in-memory per-process `BaselineStore` keyed by resolved path; an entry exists exactly while its file is under review.
+
+```mermaid
+erDiagram
+    BASELINE_STORE ||--o{ BASELINE : holds
+    BASELINE {
+        Path resolved_path "symlinks followed"
+        string-or-null content "null = creation marker"
+    }
+```
+
+`content is null` marks a file planned for creation: its diff is computed against the empty text and rejecting it deletes the file. The `edit` tool result adds `created` (bool), `baseline_registered` (bool), and the review `url`; edit results additionally echo `old_string`/`new_string` (creation results do not echo the whole file).
+
 ## Compliance metadata
 
 `REUSE.toml` contains annotation groups. Each group has:

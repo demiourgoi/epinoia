@@ -4,12 +4,13 @@
 
 ## High-level structure
 
-Epinoia is a distribution of agent skills plus the glue that makes one skill (PDD review) safe to run unattended. There is no server, build, or package. The repository has four layers:
+Epinoia is a distribution of agent skills plus the glue that makes one skill (PDD review) safe to run unattended, and one packaged application: the aletheia MCP server (subproject `aletheia/`, Python + bundled web GUI). The skills part has no server, build, or package. The repository has five layers:
 
 1. **Artifact layer** — Markdown skills and agent definitions, copied into target projects by `make install`.
 2. **Orchestration layer** — Bash scripts in `skills/ponytail-review-pdd/scripts/` that validate parameters, compute diffs, choose revision numbers, build prompts, and run opencode.
 3. **Enforcement layer** — opencode permissions (`.opencode/opencode.json`) and the opencode/Vibe agent prompts restrict the reviewer to read-only work plus one named review file.
 4. **Verification and compliance layer** — shell test suites under `tests/`, plus REUSE annotations and third-party notices.
+5. **Application layer** — aletheia: an MCP stdio server plus a loopback review web GUI, with its own pytest suite under `aletheia/tests/`.
 
 ```mermaid
 graph TB

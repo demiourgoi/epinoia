@@ -19,6 +19,7 @@
 | Installer | Copies skills and agent configs into a target project | `Makefile` (`install` target) |
 | Test harness | Discovers and runs shell suites; provides assertions and fixtures | `tests/run.sh`, `tests/lib.sh`, `tests/skills/ponytail-review-pdd/lib.sh` |
 | Test suites | Verify install placement, diff computation, orchestrator behavior, and live opencode permissions | `tests/test-install.sh`, `tests/skills/ponytail-review-pdd/test-*.sh` |
+| aletheia MCP server | Baseline-aware change review for terminal coding agents (stdio MCP + loopback web GUI) | `aletheia/src/aletheia_mcp/`, `aletheia/webui/`, `aletheia/tests/` |
 | Compliance artifacts | Record licenses, provenance, and per-file SPDX metadata | `LICENSES/`, `LICENSE`, `REUSE.toml`, `THIRD-PARTY-NOTICES.md` |
 
 ## Distributable skills (`skills/`)
@@ -71,6 +72,22 @@ The Vibe agent references the model alias instead of hardcoding the model; chang
 
 - `agent-sop-author` — teaches the SOP prompt structure (parameters, numbered steps, RFC 2119 constraints), requires deterministic logic in `scripts/`, and bundles the Agent Skills specification and `validate-skill.sh`.
 - `update-third-party-notices` — the compliance checklist: verify the upstream license, add `LICENSES/<SPDX-ID>.txt`, keep verbatim copies byte-identical, add `LICENSE` sidecars for modified derivatives, update `THIRD-PARTY-NOTICES.md` and `REUSE.toml`, and finish with `uvx reuse lint`.
+
+## aletheia (subproject)
+
+A FastMCP stdio server with an in-process loopback HTTP review server (OS-assigned free port, constant URL), bundled React GUI served at `/review`, and one in-memory `BaselineStore` per process (state lives with the agent conversation).
+
+| Subsystem | Responsibility | Key files |
+| --- | --- | --- |
+| MCP tools | `record_baseline`, `get_change_status`, `remove_from_baseline`, `rollback_to_baseline`, `edit` | `src/aletheia_mcp/server/tools/` |
+| Review service | The seam between tools/HTTP and the review core; trusted root, per-process singleton | `src/aletheia_mcp/review/service.py` |
+| Baselines | Thread-safe baseline map; creation markers (`content is None`) for to-be-created files | `src/aletheia_mcp/review/baselines.py` |
+| Editing | `apply_edit`: exact-string edit of existing files **and** whole-file creation (`old_string=""` + nonexistent path), trusted-root confinement, automatic baseline registration, no side effects on failure | `src/aletheia_mcp/review/editing.py` |
+| Diffs / disk | Unified diffs and atomic writes (`os.replace`) — the only module that touches disk content | `src/aletheia_mcp/review/diffs.py`, `disk.py` |
+| Web | REST API + review GUI (CodeMirror 6 merge view, per-file drafts, approve/reject, editable diff pane) | `src/aletheia_mcp/web/`, `webui/` |
+| Setup | `aletheia setup`: installs a `post_tool` baseline-reminder hook into `.vibe/hooks.toml` at the git root | `src/aletheia_mcp/setup.py` |
+
+The `edit` tool is the agent-facing surface of the feature from PR #1: it **replaces both Vibe built-in `edit` and `write_file`** (add both to `disabled_tools`), registering the baseline on the first change of a file — existing files as content, created files as creation markers, so rejecting a created file deletes it.
 
 ## Support tooling and tests
 
