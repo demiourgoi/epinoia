@@ -1,0 +1,56 @@
+# CI for the epinoia repository: the root Makefile's hermetic test suites
+# and the aletheia project's pytest suite, on every pull request and every
+# merge to main (merges arrive as pushes to main). The live `make test-e2e`
+# suites are intentionally not run here: they need opencode authentication
+# and spend model tokens, so they stay a developer-side opt-in.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  skills-repo:
+    name: Skills and tooling (make test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js for the opencode install
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The hermetic ponytail-review-pdd suites invoke the opencode binary
+      # even for dry runs, so it must be on PATH although no model is called.
+      - name: Install opencode
+        run: npm install --global opencode-ai@latest
+
+      - name: Run the hermetic Makefile test suites
+        run: make test
+
+  aletheia:
+    name: Aletheia (make -C aletheia test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aletheia
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install the virtual environment
+        run: make install
+
+      - name: Run the aletheia test suite
+        run: make test
