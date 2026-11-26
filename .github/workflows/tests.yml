@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+# A run per ref (PR or branch); pushes to the same PR cancel the now-stale
+# run, so fast fixup pushes do not queue full runs behind each other.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   skills-repo:
     name: Skills and tooling (make test)
@@ -21,15 +27,18 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v7
 
-      - name: Install Node.js for the opencode install
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-
-      # The hermetic ponytail-review-pdd suites invoke the opencode binary
-      # even for dry runs, so it must be on PATH although no model is called.
-      - name: Install opencode
-        run: npm install --global opencode-ai@latest
+      # run-review.sh requires the opencode binary on PATH even for dry
+      # runs (it exits early without it), but the hermetic suites never
+      # execute it: they stub their own calls to it, and the only suite that
+      # runs the real binary is the live e2e suite, skipped in CI. A no-op
+      # stub satisfies the PATH check without a Node install and without an
+      # unpinned npm package that a bad upstream release could break.
+      - name: Put an opencode stub on PATH for the hermetic suites
+        run: |
+          mkdir -p "$RUNNER_TEMP/stub-bin"
+          printf '#!/bin/sh\nexit 0\n' > "$RUNNER_TEMP/stub-bin/opencode"
+          chmod +x "$RUNNER_TEMP/stub-bin/opencode"
+          echo "$RUNNER_TEMP/stub-bin" >> "$GITHUB_PATH"
 
       - name: Run the hermetic Makefile test suites
         run: make test
