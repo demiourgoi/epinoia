@@ -74,7 +74,7 @@ See: [`.agents/summary/components.md`](.agents/summary/components.md).
 - **`.opencode/opencode.json`** — read-only permissions for that agent.
 - **`.vibe/agents/ponytail-reviewer.toml`** — the Vibe reviewer; references `active_model = "reviewer"`.
 - **`.vibe/config.toml`** — the Vibe `reviewer` model preset (`zai-glm-5-3`, `thinking = "max"`, 1M context).
-- **`.agents/skills/agent-sop-author/validate-skill.sh`** — validates a skill against the Agent Skills specification.
+- **`.agents/skills/agent-sop-author/validate-skill.py`** — validates a skill against the Agent Skills specification.
 - **`tests/run.sh`** — suite runner with `--e2e` and `--e2e-only` modes.
 
 See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
@@ -90,7 +90,7 @@ See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
 5. **Revision files never overwrite.** The next review is the first free `rev{J}` (`rev1`, `rev2`, …). Re-running after fixes is expected; do not delete earlier reviews to force `rev1`.
 6. **Vibe uses an alias.** `.vibe/agents/ponytail-reviewer.toml` sets `active_model = "reviewer"`, resolved by the `[[models]]` entry in `.vibe/config.toml`. Renaming the alias requires updating the agent.
 7. **Tests are hermetic by default.** `make test` runs only `test-*.sh` suites that do not touch the network. Suites named `test-e2e*` spend model tokens, need opencode authentication, and run only with `--e2e`. Fixtures live under gitignored `.local/` and are kept for inspection.
-8. **Skill authoring is validated, not improvised.** Use `.agents/skills/agent-sop-author/`; keep `SKILL.md` under 500 lines and move detail to `scripts/` or references. Run `validate-skill.sh` after every change and fix all errors.
+8. **Skill authoring is validated, not improvised.** Use `.agents/skills/agent-sop-author/`; keep `SKILL.md` under 500 lines and move detail to `scripts/` or references. Run `validate-skill.py` after every change and fix all errors.
 9. **Compliance is part of every change.** Third-party content requires a `LICENSE` sidecar (verbatim copies stay byte-identical), a `THIRD-PARTY-NOTICES.md` entry, and a `REUSE.toml` annotation. Original new files also need REUSE annotations. Finish with `uvx reuse lint`.
 10. **Model/limits values in the Vibe config are deliberate.** `zai-glm-5-3` has a 1M-token context window; `auto_compact_threshold = 800000` leaves room for its 128k maximum output. Do not lower them without checking the provider's documented limits.
 11. **Opencode's local version may lack a `grep` tool.** The Vibe agent comments note that Vibe 3.1.0 does not expose one; shell allow/deny lists and built-in `read_file` are used instead.
@@ -108,7 +108,7 @@ See: [`.agents/summary/interfaces.md`](.agents/summary/interfaces.md).
 | `tests/run.sh --e2e-only` | Run only the live opencode smoke tests |
 | `make -C /path/to/epinoia install` | Install skills and agent configs into the current project |
 | `make -C /path/to/epinoia install TARGET_DIR=/path/to/project` | Install into an explicit target |
-| `.agents/skills/agent-sop-author/validate-skill.sh skills/<name>` | Validate a skill |
+| `.agents/skills/agent-sop-author/validate-skill.py skills/<name>` | Validate a skill |
 | `uvx reuse lint` | Run the license/compliance gate |
 | `bin/agent-sop-to-skill.sh <skill-name>` | Convert legacy `*.sop.md` sources into a skill |
 | `make -C aletheia check \|\| test` | Lint/type-check and test the aletheia server (uv, Python 3.14) |

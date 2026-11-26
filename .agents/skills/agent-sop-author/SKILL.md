@@ -3,7 +3,7 @@ name: agent-sop-author
 description: Create (or update) and validate agent skills that guide AI agents through complex, multi-step workflows. Generates a skill directory with a SKILL.md using the SOP prompt structure (parameters, numbered steps, RFC 2119 constraints), places deterministic logic in scripts, and validates against the Agent Skills specification. Use when authoring, restructuring, or validating agent skills.
 license: Apache-2.0
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   tags: "skill, agent-sop, agent-skills, workflow, automation, scripts, rfc2119"
 ---
 
@@ -33,7 +33,7 @@ An agent skill is a directory containing, at minimum, a `SKILL.md` file:
 ```
 skill-name/
 ├── SKILL.md          # Required: YAML frontmatter + SOP prompt body
-├── scripts/          # Deterministic logic (bash preferred, else python3)
+├── scripts/          # Deterministic logic (python3 preferred; bash ≤4 lines only)
 ├── references/       # Optional: load-on-demand documentation
 └── assets/           # Optional: templates and static resources
 ```
@@ -87,12 +87,12 @@ You **MUST** write `description` so agents can discover the skill: state what it
 
 ### Validation
 
-**You MUST run validate-skill.sh after EVERY change:**
+**You MUST run validate-skill.py after EVERY change:**
 
 The validation script is located in the same directory as this SKILL.md file. When you read this skill, you will know the full path to SKILL.md, and the validation script is in that same directory.
 
 ```bash
-<skill-directory>/validate-skill.sh path/to/skill-name
+python3 <skill-directory>/validate-skill.py path/to/skill-name
 ```
 
 The script checks the frontmatter and the SOP prompt structure, and then runs the authoritative Agent Skills specification validation:
@@ -154,10 +154,10 @@ Description of what happens in this step.
 You **MUST** place deterministic logic in the `scripts/` directory rather than describing it as prose steps, as indicated in the Agent Skills specification. Deterministic logic is anything with a single correct outcome: validation, parsing, formatting, computation, or scaffolding where the agent should not improvise.
 
 **Language choice:**
-- You **SHOULD** write scripts in bash, keeping them portable: You **MUST NOT** assume any specific command is installed — guard every non-builtin command with `command -v` and print a helpful error message when it is missing
-- You **SHOULD** use python3 when the logic exceeds what bash can express portably (structured data, date math, encoding, ...): keep it self-contained with the standard library only, include helpful error messages, and handle edge cases gracefully
+- You **MUST** write scripts in python3 when the equivalent bash script would exceed 4 lines (excluding the shebang) — loops, `if/else` blocks, multi-stage pipelines, or `sed`/`awk` string surgery all push bash past that limit, and it loses readability and portability fast: keep the script self-contained with the standard library only, with helpful error messages and graceful edge-case handling
+- You **MAY** use bash only when the code is very simple (at most 4 lines, excluding the shebang): You **MUST NOT** assume any specific command is installed — guard every non-builtin command with `command -v` and print a helpful error message when it is missing
 
-**Example bash guard pattern:**
+**Example bash guard pattern (fits in a 4-line bash script):**
 
 ```bash
 if ! command -v jq >/dev/null 2>&1; then
@@ -167,9 +167,9 @@ fi
 ```
 
 **You MUST** follow these rules for `scripts/`:
-- Reference scripts from `SKILL.md` with relative paths (e.g., `scripts/extract.sh`), one level deep
-- Make scripts executable and self-contained, or clearly document their dependencies
-- Write steps that tell the agent when to run each script and what to do with its output; the reasoning stays in the prompt, the mechanics stay in the script
+- Reference scripts from `SKILL.md` with relative paths (e.g., `scripts/extract.py`), one level deep
+- You **MUST** prefer raw python3 without dependencies when possible, because stdlib-only scripts run anywhere with no install step; when a script truly needs third-party dependencies, You **MUST** create a uv project instead of installing into the user's environment: copy [assets/uv-project-skeleton/pyproject.toml](assets/uv-project-skeleton/pyproject.toml) into the skill (fill in `name`/`description`, add the minimal dependency set) and run scripts with `uv run`
+- Make scripts executable and self-contained, or clearly document their dependencies; write steps that tell the agent when to run each script and what to do with its output — the reasoning stays in the prompt, the mechanics stay in the script
 
 ### Parameters Section
 
@@ -255,7 +255,7 @@ If validation passes, proceed with processing. Otherwise, report errors.
 Run the summarization script over the collected reports.
 
 **Constraints:**
-- You MUST run scripts/summarize.sh <report-dir>
+- You MUST run scripts/summarize.py <report-dir>
 - You MUST NOT reimplement the summarization in the conversation, because the script is the reviewed source of truth
 ```
 
@@ -384,7 +384,7 @@ You **SHOULD** follow these practices when authoring skills:
 | Parameters | `## Parameters` | Yes |
 | Steps | `## Steps` with `### N.` | Yes |
 | Constraints | `**Constraints:**` with RFC 2119 | Yes |
-| Scripts | `scripts/*.sh` or `scripts/*.py` | When deterministic logic exists |
+| Scripts | `scripts/*.py` preferred; `scripts/*.sh` only for very simple (≤4 lines) logic | When deterministic logic exists |
 | Examples | `## Examples` | Recommended |
 | Troubleshooting | `## Troubleshooting` | Recommended |
 | Body length | Under 500 lines | Recommended |
@@ -439,11 +439,11 @@ Create tests based on requirements.
 
 ### Deterministic Logic in Prose
 **Problem:** A step instructs the agent to "parse the report and sum the totals" — something an agent can silently get wrong.
-**Fix:** Write `scripts/sum-totals.sh` (or `.py`) and make the step run it.
+**Fix:** Write `scripts/sum-totals.py` and make the step run it — unless the logic is very simple (≤4 lines of bash), in which case a short `.sh` is fine.
 
-### Bash Assuming Missing Commands
-**Problem:** A script calls `jq` or `yq` unguarded, and fails with a confusing error on machines without it.
-**Fix:** Guard with `command -v` and print what to install, or fall back to a python3 script.
+### Bash Overreach
+**Problem:** A bash script needs loops, `if/else` blocks, or `sed`/`awk` pipelines, growing past 4 lines; when shrunk, it calls `jq` or `yq` unguarded and fails with a confusing error on machines without it.
+**Fix:** When the bash version would exceed 4 lines, You MUST write it as a python3 script with the standard library only; if bash stays within 4 lines, guard every non-builtin command with `command -v` and print what to install.
 
 ### Missing Context in Negative Constraints
 **Problem:** Using MUST NOT without explaining why.
@@ -487,7 +487,7 @@ flowchart TD
     Steps --> Scripts[Extract deterministic logic to scripts/]
     Scripts --> Examples[Add examples]
     Examples --> Troubleshoot[Add troubleshooting]
-    Troubleshoot --> Validate[Run validate-skill.sh]
+    Troubleshoot --> Validate[Run validate-skill.py]
     Validate --> Test[Test with AI agent]
     Test --> Done[Distribute skill]
 ```
