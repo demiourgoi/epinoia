@@ -84,6 +84,7 @@ path = [
     ".agents/skills/agent-sop-author/SKILL.md",
     ".agents/skills/agent-sop-author/LICENSE",
     ".agents/skills/agent-sop-author/validate-skill.py",
+    ".agents/skills/agent-sop-author/assets/uv-project-skeleton/**",
 ]
 SPDX-FileCopyrightText = [
     "Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
