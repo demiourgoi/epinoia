@@ -12,6 +12,7 @@ version = 1
 path = [
     ".gitignore",
     "AGENTS.md",
+    ".agents/planning/2026-11-26-mistral-vibe-cli/**",
     ".agents/summary/architecture.md",
     ".agents/summary/codebase_info.md",
     ".agents/summary/components.md",
@@ -33,6 +34,7 @@ path = [
     ".vibe/hooks/aletheia_baseline.py",
     "skills/edenai-zed-config/SKILL.md",
     ".github/workflows/tests.yml",
+    "skills/mistral-vibe-cli/SKILL.md",
     "skills/ponytail-review-pdd/SKILL.md",
     "skills/ponytail-review-pdd/scripts/compute-diff.sh",
     "skills/ponytail-review-pdd/scripts/run-review.sh",
