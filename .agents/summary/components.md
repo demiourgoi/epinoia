@@ -13,7 +13,7 @@
 | `ponytail-review` skill | Upstream review methodology, shipped verbatim | `skills/ponytail-review/SKILL.md`, `LICENSE` |
 | opencode reviewer | Read-only review agent and its permissions | `.opencode/agents/ponytail-review-readonly.md`, `.opencode/opencode.json`, `.opencode/agents/LICENSE` |
 | Vibe reviewer | Equivalent read-only reviewer for Mistral Vibe | `.vibe/agents/ponytail-reviewer.toml`, `.vibe/config.toml` |
-| `agent-sop-author` | Development skill that creates and validates new skills | `.agents/skills/agent-sop-author/SKILL.md`, `validate-skill.sh`, `assets/` |
+| `agent-sop-author` | Development skill that creates and validates new skills | `.agents/skills/agent-sop-author/SKILL.md`, `validate-skill.py`, `assets/` |
 | `update-third-party-notices` | Development skill that records reused third-party content | `.agents/skills/update-third-party-notices/SKILL.md` |
 | SOP converter | Converts `*.sop.md` sources into an Agent Skills directory | `bin/agent-sop-to-skill.sh` |
 | Installer | Copies skills and agent configs into a target project | `Makefile` (`install` target) |
@@ -70,7 +70,7 @@ The Vibe agent references the model alias instead of hardcoding the model; chang
 
 ## Development-only skills (`.agents/skills/`)
 
-- `agent-sop-author` — teaches the SOP prompt structure (parameters, numbered steps, RFC 2119 constraints), requires deterministic logic in `scripts/`, and bundles the Agent Skills specification and `validate-skill.sh`.
+- `agent-sop-author` — teaches the SOP prompt structure (parameters, numbered steps, RFC 2119 constraints), requires deterministic logic in `scripts/`, and bundles the Agent Skills specification and `validate-skill.py`.
 - `update-third-party-notices` — the compliance checklist: verify the upstream license, add `LICENSES/<SPDX-ID>.txt`, keep verbatim copies byte-identical, add `LICENSE` sidecars for modified derivatives, update `THIRD-PARTY-NOTICES.md` and `REUSE.toml`, and finish with `uvx reuse lint`.
 
 ## aletheia (subproject)

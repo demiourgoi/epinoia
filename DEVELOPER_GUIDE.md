@@ -35,7 +35,7 @@ tests live in `tests/skills/ponytail-review-pdd`. See
 1. Ask `/agent-sop-author` to create the skill, providing a list of parameters, a list of steps, and some positive and negative examples.
     - The skill is generated directly in the Agent Skills format: a `skill-name/` directory with a `SKILL.md` (frontmatter plus SOP prompt body) and deterministic logic in `scripts/`.
     - It is also useful to consolidate an existing agent thread into a skill.
-2. Validate with `.agents/skills/agent-sop-author/validate-skill.sh <skill-dir>` (e.g. `skills/my-skill`).
+2. Validate with `.agents/skills/agent-sop-author/validate-skill.py <skill-dir>` (e.g. `skills/my-skill`).
 
 Remember to favor deterministic scripts in `scripts/` over prose instructions in the SKILL.md, when possible.
 

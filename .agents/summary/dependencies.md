@@ -10,7 +10,7 @@
 | `git` | `make install`, `compute-diff.sh`, `run-review.sh`, tests | The installer resolves the target's git root; the reviewer runs at it |
 | `make` | `make install`, `make test`, `make test-e2e` | Thin wrappers over the shell entry points |
 | `opencode` | `run-review.sh`, e2e suites | Must be authenticated for the selected model's provider |
-| `uvx` | `validate-skill.sh`, `update-third-party-notices`, `bin/agent-sop-to-skill.sh`, aletheia (`uvx --from aletheia aletheia`) | Downloads `reuse`, `skills-ref`, and `strands-agents-sops` on first use; runs the aletheia server |
+| `uvx` | `validate-skill.py`, `update-third-party-notices`, `bin/agent-sop-to-skill.sh`, aletheia (`uvx --from aletheia aletheia`) | Downloads `reuse`, `skills-ref`, and `strands-agents-sops` on first use; runs the aletheia server |
 | Standard Unix tools | Scripts and tests | `sed`, `grep`, `find`, `mktemp`, `dirname`, `basename`, `realpath`/`readlink`, `tail`, `date` |
 
 ### Optional helpers

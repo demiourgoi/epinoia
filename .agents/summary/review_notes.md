@@ -31,7 +31,7 @@ Areas with limited coverage:
 - **macOS portability is untested.** `test-run-review.sh` uses GNU `sed -i`; the UUID fallback and relative-path fallback are exercised only on Linux.
 - **No CI configuration in this directory.** Any workflows live at the repository's git root, outside this package, so their coverage could not be verified here.
 - **Test fixtures accumulate.** Suites intentionally leave their workspaces under `.local/` for inspection; repeated runs grow that directory until it is cleaned.
-- **`validate-skill.sh` has no test of its own.** It is used manually and runs an external `uvx` validator that needs network access or a warm cache.
+- **`validate-skill.py` has no test of its own.** It is used manually and runs an external `uvx` validator that needs network access or a warm cache.
 
 ## Recommendations
 

@@ -79,7 +79,7 @@ Rules the launching agent must follow:
 1. Use `.agents/skills/agent-sop-author/SKILL.md` to design parameters, steps, constraints, examples, and troubleshooting.
 2. Put deterministic logic in `scripts/`; keep `SKILL.md` concise (under 500 lines).
 3. Create the skill under `skills/` if it is distributable, or under `.agents/skills/` if it is development-only.
-4. Run `.agents/skills/agent-sop-author/validate-skill.sh <skill-dir>` after every change and fix all errors.
+4. Run `.agents/skills/agent-sop-author/validate-skill.py <skill-dir>` after every change and fix all errors.
 5. If the skill is a third-party derivative, run the compliance workflow below.
 
 ## 5. Record third-party content

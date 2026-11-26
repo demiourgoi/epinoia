@@ -65,10 +65,10 @@ agent-sop-to-skill.sh <skill-name>
 
 Runs `uvx strands-agents-sops skills --sop-paths skills/<name> --output-dir <temp>` and copies the generated tree into `skills/<name>/`, overwriting existing generated files. Leaves `*.sop.md` sources in place and prints a reminder about `SKILL.md` review, LICENSE sidecars, and notices. Exit 2 on wrong argument count, 1 when the skill directory is missing.
 
-### `.agents/skills/agent-sop-author/validate-skill.sh`
+### `.agents/skills/agent-sop-author/validate-skill.py`
 
 ```text
-validate-skill.sh <path-to-skill-directory>
+validate-skill.py <path-to-skill-directory>
 ```
 
 Checks: `SKILL.md` exists; YAML frontmatter is present; `name` and `description` exist; `name` matches the directory, uses kebab-case, and is at most 64 characters; `description` is at most 1024 characters; Overview, Parameters, Steps, numbered sub-steps, and Constraints sections exist; RFC 2119 keywords appear. It then runs the authoritative `uvx --from skills-ref agentskills validate <dir>`. Exit 0 only when there are no errors (warnings are allowed).

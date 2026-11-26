@@ -25,9 +25,11 @@ frontmatter was changed to conform to the Agent Skills specification,
 and the skill was reworked so it now generates agent skills (a skill
 directory with a `SKILL.md` in the Agent Skills format, with
 deterministic logic in `scripts/`) instead of `.sop.md` SOP files;
-`validate-sop.sh` was renamed to `validate-skill.sh` and extended with
+`validate-sop.sh` was renamed to `validate-skill.sh`, extended with
 the authoritative `uvx --from skills-ref agentskills validate`
-specification check. As a derivative of an Apache-2.0 work it remains
+specification check, and later rewritten in python3 as
+`validate-skill.py`, following the skill's own rule that scripts longer
+than 4 lines of bash MUST be python3. As a derivative of an Apache-2.0 work it remains
 licensed under Apache-2.0. Full license text:
 https://www.apache.org/licenses/LICENSE-2.0 and LICENSES/Apache-2.0.txt
 in this repository.

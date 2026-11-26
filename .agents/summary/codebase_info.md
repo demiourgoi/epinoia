@@ -79,7 +79,7 @@ graph TB
 | `aletheia/src/aletheia_mcp/main.py` | `aletheia` CLI: stdio MCP server (console script and `__main__`) |
 | `aletheia/src/aletheia_mcp/setup.py` | `aletheia setup`: installs the baseline-reminder Vibe hook |
 | `aletheia/Makefile` | aletheia subproject: `install`, `webui`, `check`, `test` |
-| `.agents/skills/agent-sop-author/validate-skill.sh` | Validates a skill against the Agent Skills specification |
+| `.agents/skills/agent-sop-author/validate-skill.py` | Validates a skill against the Agent Skills specification |
 | `.opencode/opencode.json` | Declares the reviewer agent's read-only permissions |
 | `.vibe/config.toml` | Declares the Vibe `reviewer` model alias and limits |
 
