@@ -297,3 +297,9 @@ invocation, or use `--worktree`, which trusts its run.
 The directory has no session, or session logging was disabled. Set
 `[session_logging] enabled = true` in `~/.vibe/config.toml` and prefer
 explicit `--resume SESSION_ID` with the ID printed by the original run.
+
+## References
+
+- [Vibe Code docs index (`llms.txt`)](https://docs.mistral.ai/llms/vibe/code/llms.txt) — machine-readable index of the full Vibe documentation; use it to look up commands, configuration, and programmatic-mode options not covered in this skill.
+- [Vibe Code CLI docs](https://docs.mistral.ai/llms/vibe/code/cli) — the human-readable documentation this skill summarizes.
+- [mistralai/mistral-vibe](https://github.com/mistralai/mistral-vibe) — the CLI's source repository.
